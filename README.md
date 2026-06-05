@@ -50,12 +50,36 @@ Hot-reload is enabled for both the Go backend (`air`) and the Vite frontend dev 
 
 ## Configuration
 
-| Environment variable | Default                    | Description                  |
-|----------------------|----------------------------|------------------------------|
-| `DB_PATH`            | `/data/iplist.db`          | Path to the SQLite database  |
-| `JWT_SECRET`         | `change-me-in-production`  | Secret key for signing JWTs  |
+Configuration is loaded from a JSON file (default `config.json` in the working directory). Environment variables override any value in the file.
 
-Set `JWT_SECRET` to a strong random value in production:
+```jsonc
+// config.json
+{
+  "db_path":    "iplist.db",
+  "jwt_secret": "change-me-to-a-long-random-string",
+  "port":       "8080"
+}
+```
+
+Copy the example file to get started:
+
+```bash
+cp config.example.json config.json
+```
+
+Use a different config file with the `-config` flag:
+
+```bash
+./iplist -config /etc/iplist/config.json
+```
+
+| Key / Env variable       | Default                    | Description                  |
+|--------------------------|----------------------------|------------------------------|
+| `db_path` / `DB_PATH`    | `iplist.db`                | Path to the SQLite database  |
+| `jwt_secret` / `JWT_SECRET` | `change-me-in-production` | Secret key for signing JWTs |
+| `port` / `PORT`          | `8080`                     | Port the server listens on   |
+
+Generate a strong JWT secret:
 
 ```bash
 openssl rand -hex 32

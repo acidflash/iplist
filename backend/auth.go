@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 
@@ -24,11 +23,7 @@ type userClaims struct {
 }
 
 func jwtSecret() []byte {
-	s := os.Getenv("JWT_SECRET")
-	if s == "" {
-		s = "change-me-in-production"
-	}
-	return []byte(s)
+	return []byte(appCfg.JWTSecret)
 }
 
 func signToken(id int64, username, role string) (string, error) {

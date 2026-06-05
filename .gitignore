@@ -7,3 +7,4 @@ backend/iplist
 frontend/node_modules/
 frontend/dist/
 .env
+config.json

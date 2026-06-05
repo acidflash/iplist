@@ -4,7 +4,6 @@ import (
 	"flag"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -13,14 +12,14 @@ import (
 
 func main() {
 	seedFlag := flag.Bool("seed", false, "Seed database with test data (only if empty)")
+	configPath := flag.String("config", "config.json", "Path to JSON config file")
 	flag.Parse()
 
-	dbPath := os.Getenv("DB_PATH")
-	if dbPath == "" {
-		dbPath = "iplist.db"
+	if err := LoadConfig(*configPath); err != nil {
+		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	db, err := InitDB(dbPath)
+	db, err := InitDB(appCfg.DBPath)
 	if err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
@@ -124,13 +123,8 @@ func main() {
 		})
 	})
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	log.Printf("Server starting on :%s", port)
-	if err := http.ListenAndServe(":"+port, r); err != nil {
+	log.Printf("Server starting on :%s", appCfg.Port)
+	if err := http.ListenAndServe(":"+appCfg.Port, r); err != nil {
 		log.Fatal(err)
 	}
 }
