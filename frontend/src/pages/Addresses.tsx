@@ -1,9 +1,12 @@
 import { useEffect, useState, useCallback } from 'react'
+import { useAuth } from '../context/AuthContext'
 import { Plus, Pencil, Trash2, Server } from 'lucide-react'
 import { getAddresses, createAddress, updateAddress, deleteAddress, getPrefixes } from '../api/client'
 import type { IPAddress, Prefix, Status } from '../types'
 import { Modal } from '../components/Modal'
 import { StatusBadge } from '../components/StatusBadge'
+import { ExportMenu } from '../components/ExportMenu'
+import { exportAddresses } from '../utils/export'
 
 interface FormData {
   address: string; hostname: string; dns_name: string
@@ -12,6 +15,7 @@ interface FormData {
 const emptyForm: FormData = { address: '', hostname: '', dns_name: '', description: '', status: 'active', prefix_id: '' }
 
 export function Addresses() {
+  const { isAdmin } = useAuth()
   const [addresses, setAddresses] = useState<IPAddress[]>([])
   const [prefixes, setPrefixes] = useState<Prefix[]>([])
   const [showModal, setShowModal] = useState(false)
@@ -63,11 +67,19 @@ export function Addresses() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-base font-semibold text-c-text">IP-adresser</h1>
-          <p className="text-c-text3 mt-0.5" style={{ fontSize: '12px' }}>{addresses.length} adresser</p>
+          <p className="text-c-text3 mt-0.5" style={{ fontSize: '13px' }}>{addresses.length} adresser</p>
         </div>
-        <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
-          <Plus size={14} /> Lägg till
-        </button>
+        <div className="flex items-center gap-2">
+          <ExportMenu
+            onExport={fmt => exportAddresses(addresses, prefixMap, fmt)}
+            disabled={addresses.length === 0}
+          />
+          {isAdmin && (
+            <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
+              <Plus size={14} /> Lägg till
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex gap-2.5 mb-4 flex-wrap items-center">
@@ -92,7 +104,7 @@ export function Addresses() {
             <tr style={{ background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)' }}>
               {['IP-adress', 'Hostname', 'DNS', 'Prefix', 'Status', ''].map(h => (
                 <th key={h} className="px-4 py-2.5 text-left font-medium"
-                  style={{ fontSize: '11px', color: 'var(--c-text-3)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  style={{ fontSize: '12px', color: 'var(--c-text-3)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                   {h}
                 </th>
               ))}
@@ -103,7 +115,7 @@ export function Addresses() {
               <tr>
                 <td colSpan={6} className="py-14 text-center">
                   <Server size={28} style={{ color: 'var(--c-border)', margin: '0 auto 8px' }} />
-                  <p className="text-c-text3" style={{ fontSize: '13px' }}>
+                  <p className="text-c-text3" style={{ fontSize: '14px' }}>
                     {search || filterPrefix || filterStatus ? 'Inga adresser matchar filtret' : 'Lägg till din första IP-adress'}
                   </p>
                 </td>
@@ -117,22 +129,24 @@ export function Addresses() {
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--c-raised)')}
                   onMouseLeave={e => (e.currentTarget.style.background = '')}>
                   <td className="px-4 py-2.5">
-                    <code className="font-ip text-c-accent" style={{ fontSize: '12.5px' }}>{a.address}</code>
+                    <code className="font-ip text-c-accent" style={{ fontSize: '13.5px' }}>{a.address}</code>
                   </td>
-                  <td className="px-4 py-2.5 text-c-text" style={{ fontSize: '13px' }}>{a.hostname || <span style={{ color: 'var(--c-text-3)' }}>–</span>}</td>
-                  <td className="px-4 py-2.5 text-c-text2" style={{ fontSize: '13px' }}>{a.dns_name || <span style={{ color: 'var(--c-text-3)' }}>–</span>}</td>
+                  <td className="px-4 py-2.5 text-c-text" style={{ fontSize: '14px' }}>{a.hostname || <span style={{ color: 'var(--c-text-3)' }}>–</span>}</td>
+                  <td className="px-4 py-2.5 text-c-text2" style={{ fontSize: '14px' }}>{a.dns_name || <span style={{ color: 'var(--c-text-3)' }}>–</span>}</td>
                   <td className="px-4 py-2.5">
                     {prefix
-                      ? <code className="font-ip text-c-text3" style={{ fontSize: '11.5px', background: 'var(--c-raised)', border: '1px solid var(--c-border)', borderRadius: '4px', padding: '2px 6px' }}>{prefix.prefix}</code>
+                      ? <code className="font-ip text-c-text3" style={{ fontSize: '12.5px', background: 'var(--c-raised)', border: '1px solid var(--c-border)', borderRadius: '4px', padding: '2px 6px' }}>{prefix.prefix}</code>
                       : <span style={{ color: 'var(--c-text-3)' }}>–</span>}
                   </td>
                   <td className="px-4 py-2.5"><StatusBadge status={a.status} /></td>
-                  <td className="px-3 py-2.5">
-                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <IconBtn onClick={() => openEdit(a)} hoverColor="var(--c-accent)"><Pencil size={13} /></IconBtn>
-                      <IconBtn onClick={() => handleDelete(a)} hoverColor="var(--c-danger)"><Trash2 size={13} /></IconBtn>
-                    </div>
-                  </td>
+                  {isAdmin && (
+                    <td className="px-3 py-2.5">
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <IconBtn onClick={() => openEdit(a)} hoverColor="var(--c-accent)"><Pencil size={13} /></IconBtn>
+                        <IconBtn onClick={() => handleDelete(a)} hoverColor="var(--c-danger)"><Trash2 size={13} /></IconBtn>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               )
             })}

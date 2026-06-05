@@ -1,14 +1,18 @@
 import { useEffect, useState, useCallback } from 'react'
+import { useAuth } from '../context/AuthContext'
 import { Plus, Pencil, Trash2, Layers } from 'lucide-react'
 import { getVLANs, createVLAN, updateVLAN, deleteVLAN } from '../api/client'
 import type { VLAN, Status } from '../types'
 import { Modal } from '../components/Modal'
 import { StatusBadge } from '../components/StatusBadge'
+import { ExportMenu } from '../components/ExportMenu'
+import { exportVLANs } from '../utils/export'
 
 interface FormData { vid: string; name: string; description: string; status: Status }
 const emptyForm: FormData = { vid: '', name: '', description: '', status: 'active' }
 
 export function VLANs() {
+  const { isAdmin } = useAuth()
   const [vlans, setVlans] = useState<VLAN[]>([])
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<VLAN | null>(null)
@@ -49,11 +53,16 @@ export function VLANs() {
       <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-base font-semibold text-c-text">VLAN</h1>
-          <p className="text-c-text3 mt-0.5" style={{ fontSize: '12px' }}>{vlans.length} VLAN</p>
+          <p className="text-c-text3 mt-0.5" style={{ fontSize: '13px' }}>{vlans.length} VLAN</p>
         </div>
-        <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
-          <Plus size={14} /> Lägg till
-        </button>
+        <div className="flex items-center gap-2">
+          <ExportMenu onExport={fmt => exportVLANs(vlans, fmt)} disabled={vlans.length === 0} />
+          {isAdmin && (
+            <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
+              <Plus size={14} /> Lägg till
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="mb-4">
@@ -67,7 +76,7 @@ export function VLANs() {
             <tr style={{ background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)' }}>
               {['ID', 'Namn', 'Beskrivning', 'Status', ''].map(h => (
                 <th key={h} className="px-4 py-2.5 text-left font-medium"
-                  style={{ fontSize: '11px', color: 'var(--c-text-3)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                  style={{ fontSize: '12px', color: 'var(--c-text-3)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                   {h}
                 </th>
               ))}
@@ -78,7 +87,7 @@ export function VLANs() {
               <tr>
                 <td colSpan={5} className="py-14 text-center">
                   <Layers size={28} style={{ color: 'var(--c-border)', margin: '0 auto 8px' }} />
-                  <p className="text-c-text3" style={{ fontSize: '13px' }}>
+                  <p className="text-c-text3" style={{ fontSize: '14px' }}>
                     {search ? 'Inga VLAN matchar sökningen' : 'Lägg till ditt första VLAN'}
                   </p>
                 </td>
@@ -96,7 +105,7 @@ export function VLANs() {
                   <span
                     className="font-ip font-medium"
                     style={{
-                      fontSize: '12.5px',
+                      fontSize: '13.5px',
                       color: 'var(--c-purple)',
                       background: 'oklch(66% 0.18 295 / 0.10)',
                       border: '1px solid oklch(66% 0.18 295 / 0.22)',
@@ -107,15 +116,17 @@ export function VLANs() {
                     {v.vid}
                   </span>
                 </td>
-                <td className="px-4 py-2.5 text-c-text font-medium" style={{ fontSize: '13px' }}>{v.name}</td>
-                <td className="px-4 py-2.5 text-c-text2" style={{ fontSize: '13px' }}>{v.description || <span style={{ color: 'var(--c-text-3)' }}>–</span>}</td>
+                <td className="px-4 py-2.5 text-c-text font-medium" style={{ fontSize: '14px' }}>{v.name}</td>
+                <td className="px-4 py-2.5 text-c-text2" style={{ fontSize: '14px' }}>{v.description || <span style={{ color: 'var(--c-text-3)' }}>–</span>}</td>
                 <td className="px-4 py-2.5"><StatusBadge status={v.status} /></td>
-                <td className="px-3 py-2.5">
-                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <IconBtn onClick={() => openEdit(v)} hoverColor="var(--c-accent)"><Pencil size={13} /></IconBtn>
-                    <IconBtn onClick={() => handleDelete(v)} hoverColor="var(--c-danger)"><Trash2 size={13} /></IconBtn>
-                  </div>
-                </td>
+                {isAdmin && (
+                  <td className="px-3 py-2.5">
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <IconBtn onClick={() => openEdit(v)} hoverColor="var(--c-accent)"><Pencil size={13} /></IconBtn>
+                      <IconBtn onClick={() => handleDelete(v)} hoverColor="var(--c-danger)"><Trash2 size={13} /></IconBtn>
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

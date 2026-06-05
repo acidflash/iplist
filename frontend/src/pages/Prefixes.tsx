@@ -1,10 +1,14 @@
 import { useEffect, useState, useCallback } from 'react'
+import { Link } from 'react-router-dom'
 import { Plus, Pencil, Trash2, ChevronRight, ChevronDown, Network } from 'lucide-react'
 import { getPrefixes, createPrefix, updatePrefix, deletePrefix, getVLANs } from '../api/client'
 import type { Prefix, VLAN, Status } from '../types'
 import { Modal } from '../components/Modal'
 import { UtilizationBar } from '../components/UtilizationBar'
 import { StatusBadge } from '../components/StatusBadge'
+import { useAuth } from '../context/AuthContext'
+import { ExportMenu } from '../components/ExportMenu'
+import { exportPrefixes } from '../utils/export'
 
 interface FormData {
   prefix: string; name: string; description: string
@@ -30,6 +34,7 @@ function PrefixRow({
   prefix: Prefix; depth: number; vlans: VLAN[]
   onEdit: (p: Prefix) => void; onDelete: (p: Prefix) => void
 }) {
+  const { isAdmin } = useAuth()
   const [expanded, setExpanded] = useState(depth < 2)
   const hasChildren = (prefix.children?.length ?? 0) > 0
 
@@ -62,13 +67,18 @@ function PrefixRow({
                 ? <ChevronDown size={12} />
                 : <ChevronRight size={12} />}
             </button>
-            <code className="font-ip text-c-accent" style={{ fontSize: '12.5px' }}>
+            <Link
+              to={`/prefixes/${prefix.id}`}
+              className="font-ip hover:underline"
+              style={{ fontSize: '13.5px', color: 'var(--c-accent)' }}
+              onClick={e => e.stopPropagation()}
+            >
               {prefix.prefix}
-            </code>
+            </Link>
           </div>
         </td>
         <td className="px-4 py-2">
-          <span className="text-c-text2" style={{ fontSize: '13px' }}>
+          <span className="text-c-text2" style={{ fontSize: '14px' }}>
             {prefix.name || <span style={{ color: 'var(--c-text-3)' }}>–</span>}
           </span>
         </td>
@@ -77,7 +87,7 @@ function PrefixRow({
             <span
               className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 font-ip"
               style={{
-                fontSize: '11.5px',
+                fontSize: '12.5px',
                 background: 'oklch(66% 0.18 295 / 0.10)',
                 border: '1px solid oklch(66% 0.18 295 / 0.25)',
                 color: 'var(--c-purple)',
@@ -92,7 +102,7 @@ function PrefixRow({
           <UtilizationBar value={prefix.utilization} />
         </td>
         <td className="px-4 py-2">
-          <span className="font-ip tabular-nums text-c-text3" style={{ fontSize: '11.5px' }}>
+          <span className="font-ip tabular-nums text-c-text3" style={{ fontSize: '12.5px' }}>
             {prefix.used_ips}/{prefix.total_ips}
           </span>
         </td>
@@ -100,12 +110,12 @@ function PrefixRow({
           <div
             className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
           >
-            <ActionBtn onClick={() => onEdit(prefix)} accent>
+            {isAdmin && <ActionBtn onClick={() => onEdit(prefix)} accent>
               <Pencil size={13} />
-            </ActionBtn>
-            <ActionBtn onClick={() => onDelete(prefix)}>
+            </ActionBtn>}
+            {isAdmin && <ActionBtn onClick={() => onDelete(prefix)}>
               <Trash2 size={13} />
-            </ActionBtn>
+            </ActionBtn>}
           </div>
         </td>
       </tr>
@@ -142,6 +152,7 @@ function ActionBtn({ onClick, accent, children }: {
 }
 
 export function Prefixes() {
+  const { isAdmin } = useAuth()
   const [prefixes, setPrefixes] = useState<Prefix[]>([])
   const [vlans, setVlans] = useState<VLAN[]>([])
   const [showModal, setShowModal] = useState(false)
@@ -199,9 +210,14 @@ export function Prefixes() {
             {prefixes.length} prefix
           </p>
         </div>
-        <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
-          <Plus size={14} /> Lägg till
-        </button>
+        <div className="flex items-center gap-2">
+          <ExportMenu onExport={fmt => exportPrefixes(prefixes, fmt)} disabled={prefixes.length === 0} />
+          {isAdmin && (
+            <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
+              <Plus size={14} /> Lägg till
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="mb-4">
@@ -226,7 +242,7 @@ export function Prefixes() {
                 <th
                   key={h}
                   className="px-4 py-2.5 text-left font-medium"
-                  style={{ fontSize: '11px', color: 'var(--c-text-3)', letterSpacing: '0.06em', textTransform: 'uppercase' }}
+                  style={{ fontSize: '12px', color: 'var(--c-text-3)', letterSpacing: '0.05em', textTransform: 'uppercase' }}
                 >
                   {h}
                 </th>
@@ -238,7 +254,7 @@ export function Prefixes() {
               <tr>
                 <td colSpan={7} className="py-14 text-center">
                   <Network size={28} style={{ color: 'var(--c-border)', margin: '0 auto 8px' }} />
-                  <p className="text-c-text3" style={{ fontSize: '13px' }}>
+                  <p className="text-c-text3" style={{ fontSize: '14px' }}>
                     {search ? 'Inga prefix matchar sökningen' : 'Lägg till ditt första prefix'}
                   </p>
                 </td>

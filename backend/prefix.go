@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
+	"sort"
 	"strconv"
 	"time"
 
@@ -127,20 +129,25 @@ func (r *PrefixRepo) List() ([]Prefix, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 
 	var prefixes []Prefix
 	for rows.Next() {
 		p, err := r.scanPrefix(rows)
 		if err != nil {
+			rows.Close()
 			return nil, err
-		}
-		p.TotalIPs, p.UsedIPs = r.calculateUsage(p.Prefix, p.ID)
-		if p.TotalIPs > 0 {
-			p.Utilization = float64(p.UsedIPs) / float64(p.TotalIPs) * 100
 		}
 		prefixes = append(prefixes, p)
 	}
+	rows.Close()
+
+	for i := range prefixes {
+		prefixes[i].TotalIPs, prefixes[i].UsedIPs = r.calculateUsage(prefixes[i].Prefix, prefixes[i].ID)
+		if prefixes[i].TotalIPs > 0 {
+			prefixes[i].Utilization = float64(prefixes[i].UsedIPs) / float64(prefixes[i].TotalIPs) * 100
+		}
+	}
+
 	if prefixes == nil {
 		prefixes = []Prefix{}
 	}
@@ -184,17 +191,21 @@ func (r *PrefixRepo) GetByID(id int64) (*Prefix, error) {
 		WHERE p.parent_id = ?
 		ORDER BY p.prefix`, id)
 	if err == nil {
-		defer childRows.Close()
+		var children []Prefix
 		for childRows.Next() {
 			child, err := r.scanPrefix(childRows)
 			if err == nil {
-				child.TotalIPs, child.UsedIPs = r.calculateUsage(child.Prefix, child.ID)
-				if child.TotalIPs > 0 {
-					child.Utilization = float64(child.UsedIPs) / float64(child.TotalIPs) * 100
-				}
-				p.Children = append(p.Children, child)
+				children = append(children, child)
 			}
 		}
+		childRows.Close()
+		for i := range children {
+			children[i].TotalIPs, children[i].UsedIPs = r.calculateUsage(children[i].Prefix, children[i].ID)
+			if children[i].TotalIPs > 0 {
+				children[i].Utilization = float64(children[i].UsedIPs) / float64(children[i].TotalIPs) * 100
+			}
+		}
+		p.Children = children
 	}
 	if p.Children == nil {
 		p.Children = []Prefix{}
@@ -203,7 +214,7 @@ func (r *PrefixRepo) GetByID(id int64) (*Prefix, error) {
 	// Load addresses
 	addrRows, err := r.db.Query(`
 		SELECT id, address, prefix_id, hostname, description, status, dns_name, created_at, updated_at
-		FROM ip_addresses WHERE prefix_id = ? ORDER BY address`, id)
+		FROM ip_addresses WHERE prefix_id = ?`, id)
 	if err == nil {
 		defer addrRows.Close()
 		for addrRows.Next() {
@@ -213,6 +224,11 @@ func (r *PrefixRepo) GetByID(id int64) (*Prefix, error) {
 				p.Addresses = append(p.Addresses, a)
 			}
 		}
+		sort.Slice(p.Addresses, func(i, j int) bool {
+			a := net.ParseIP(p.Addresses[i].Address).To16()
+			b := net.ParseIP(p.Addresses[j].Address).To16()
+			return bytes.Compare(a, b) < 0
+		})
 	}
 	if p.Addresses == nil {
 		p.Addresses = []IPAddress{}

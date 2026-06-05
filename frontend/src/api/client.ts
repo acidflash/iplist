@@ -3,6 +3,30 @@ import type { Prefix, VLAN, IPAddress, Stats } from '../types'
 
 const api = axios.create({ baseURL: '/api/v1' })
 
+// Attach JWT from localStorage on every request
+api.interceptors.request.use(config => {
+  try {
+    const raw = localStorage.getItem('iplist_auth')
+    if (raw) {
+      const { token } = JSON.parse(raw)
+      if (token) config.headers.Authorization = `Bearer ${token}`
+    }
+  } catch { /* ignore */ }
+  return config
+})
+
+// On 401, clear stored auth and reload to show login
+api.interceptors.response.use(
+  r => r,
+  err => {
+    if (err.response?.status === 401) {
+      localStorage.removeItem('iplist_auth')
+      window.location.href = '/'
+    }
+    return Promise.reject(err)
+  }
+)
+
 // Prefixes
 export const getPrefixes = () => api.get<Prefix[]>('/prefixes').then(r => r.data)
 export const getPrefix = (id: number) => api.get<Prefix>(`/prefixes/${id}`).then(r => r.data)
@@ -27,3 +51,12 @@ export const deleteAddress = (id: number) => api.delete(`/addresses/${id}`)
 
 // Stats
 export const getStats = () => api.get<Stats>('/stats').then(r => r.data)
+
+// Users
+export interface UserData { id: number; username: string; role: string; created_at: string; updated_at: string }
+export const getUsers = () => api.get<UserData[]>('/users').then(r => r.data)
+export const createUser = (data: { username: string; password: string; role: string }) =>
+  api.post<UserData>('/users', data).then(r => r.data)
+export const updateUser = (id: number, data: { password?: string; role?: string }) =>
+  api.put(`/users/${id}`, data)
+export const deleteUser = (id: number) => api.delete(`/users/${id}`)

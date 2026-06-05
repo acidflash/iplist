@@ -35,10 +35,11 @@ html {
   background: var(--c-base);
   color: var(--c-text);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  zoom: 1.25;
 }
 
 body { margin: 0; background: var(--c-base); }
@@ -80,7 +81,7 @@ body { margin: 0; background: var(--c-base); }
   border-radius: 7px;
   color: var(--c-text);
   font-family: inherit;
-  font-size: 13px;
+  font-size: 14px;
   transition: border-color 120ms, box-shadow 120ms;
   appearance: none;
 }
@@ -92,7 +93,7 @@ body { margin: 0; background: var(--c-base); }
 }
 .ctrl.mono {
   font-family: 'JetBrains Mono', ui-monospace, monospace;
-  font-size: 12.5px;
+  font-size: 13px;
 }
 select.ctrl { cursor: pointer; }
 textarea.ctrl { resize: vertical; min-height: 60px; }
@@ -100,7 +101,7 @@ textarea.ctrl { resize: vertical; min-height: 60px; }
 /* Label */
 .lbl {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--c-text-2);
   margin-bottom: 5px;
@@ -114,7 +115,7 @@ textarea.ctrl { resize: vertical; min-height: 60px; }
   color: #fff;
   border: none;
   border-radius: 7px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: background 120ms;
@@ -127,7 +128,7 @@ textarea.ctrl { resize: vertical; min-height: 60px; }
   color: var(--c-text-2);
   border: 1px solid var(--c-border);
   border-radius: 7px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: background 120ms, color 120ms;

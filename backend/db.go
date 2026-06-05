@@ -27,6 +27,15 @@ func migrate(db *sql.DB) error {
 		PRAGMA journal_mode=WAL;
 		PRAGMA foreign_keys=ON;
 
+		CREATE TABLE IF NOT EXISTS users (
+			id            INTEGER PRIMARY KEY AUTOINCREMENT,
+			username      TEXT NOT NULL UNIQUE,
+			password_hash TEXT NOT NULL,
+			role          TEXT NOT NULL DEFAULT 'read' CHECK(role IN ('admin','read')),
+			created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+			updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+		);
+
 		CREATE TABLE IF NOT EXISTS vlans (
 			id          INTEGER PRIMARY KEY AUTOINCREMENT,
 			vid         INTEGER NOT NULL UNIQUE CHECK(vid >= 1 AND vid <= 4094),
@@ -61,5 +70,19 @@ func migrate(db *sql.DB) error {
 			updated_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 		);
 	`)
+	return err
+}
+
+func seedDefaultUsers(db *sql.DB) error {
+	var n int
+	db.QueryRow("SELECT COUNT(*) FROM users").Scan(&n)
+	if n > 0 {
+		return nil
+	}
+	repo := NewUserRepo(db)
+	if _, err := repo.Create("admin", "admin", "admin"); err != nil {
+		return err
+	}
+	_, err := repo.Create("reader", "reader", "read")
 	return err
 }

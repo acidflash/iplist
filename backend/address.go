@@ -1,11 +1,13 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net"
 	"net/http"
+	"sort"
 	"strconv"
 	"time"
 
@@ -77,8 +79,6 @@ func (r *AddressRepo) List(prefixID *int64, status string) ([]IPAddress, error) 
 		query += " AND status = ?"
 		args = append(args, status)
 	}
-	query += " ORDER BY address"
-
 	rows, err := r.db.Query(query, args...)
 	if err != nil {
 		return nil, err
@@ -94,6 +94,11 @@ func (r *AddressRepo) List(prefixID *int64, status string) ([]IPAddress, error) 
 		}
 		addresses = append(addresses, a)
 	}
+	sort.Slice(addresses, func(i, j int) bool {
+		a := net.ParseIP(addresses[i].Address).To16()
+		b := net.ParseIP(addresses[j].Address).To16()
+		return bytes.Compare(a, b) < 0
+	})
 	if addresses == nil {
 		addresses = []IPAddress{}
 	}
