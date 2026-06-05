@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import { LayoutDashboard, Network, Layers, Server, Users, LogOut } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { LogoMark } from './Logo'
 
 export function Layout() {
   const { auth, logout, isAdmin } = useAuth()
@@ -24,12 +25,7 @@ export function Layout() {
           className="px-4 h-12 flex items-center gap-2.5 flex-shrink-0 border-b"
           style={{ borderColor: 'var(--c-border-sub)' }}
         >
-          <div
-            className="w-6 h-6 rounded-md flex items-center justify-center"
-            style={{ background: 'oklch(62% 0.20 258 / 0.15)', border: '1px solid oklch(62% 0.20 258 / 0.3)' }}
-          >
-            <Network size={13} style={{ color: 'var(--c-accent)' }} />
-          </div>
+          <LogoMark size={22} color="var(--c-accent)" />
           <span className="font-semibold text-c-text text-sm tracking-tight">IPList</span>
         </div>
 
