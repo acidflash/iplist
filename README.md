@@ -12,6 +12,16 @@ A self-hosted IP Address Management (IPAM) tool for tracking VLANs, IP prefixes,
 - **Numeric IP sorting** — addresses sorted correctly by numeric value, not lexicographically
 - **Dark UI** — monospace-accented dark theme
 
+## Screenshots
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+![Prefix list](docs/screenshots/prefixes.png)
+
+![Prefix detail](docs/screenshots/prefix_detail.png)
+
+![IP addresses](docs/screenshots/addresses.png)
+
 ## Tech stack
 
 | Layer    | Technology                                      |
