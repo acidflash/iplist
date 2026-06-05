@@ -1,0 +1,9 @@
+*.db
+*.db-shm
+*.db-wal
+backend/tmp/
+backend/server
+backend/iplist
+frontend/node_modules/
+frontend/dist/
+.env
