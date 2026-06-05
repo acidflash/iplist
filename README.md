@@ -25,7 +25,33 @@ A self-hosted IP Address Management (IPAM) tool for tracking VLANs, IP prefixes,
 
 ## Getting started
 
-### Production (Docker Compose)
+### Option 1 — Docker Compose (recommended)
+
+**1. Clone the repo and create a config file:**
+
+```bash
+git clone https://github.com/acidflash/iplist.git
+cd iplist
+cp config.example.json config.json
+```
+
+**2. Edit `config.json` and set a strong JWT secret:**
+
+```json
+{
+  "db_path":    "/data/iplist.db",
+  "jwt_secret": "replace-with-a-long-random-string",
+  "port":       "8080"
+}
+```
+
+Generate a secret with:
+
+```bash
+openssl rand -hex 32
+```
+
+**3. Start the application:**
 
 ```bash
 docker compose up -d
@@ -33,12 +59,38 @@ docker compose up -d
 
 The app is available at [http://localhost:8080](http://localhost:8080).
 
-Default credentials (change after first login):
+**Default credentials — change these immediately after first login:**
 
 | Username | Password | Role  |
 |----------|----------|-------|
 | admin    | admin    | Admin |
 | reader   | reader   | Read  |
+
+---
+
+### Option 2 — Run the binary directly
+
+Build the backend and serve the frontend with any static file server.
+
+```bash
+# Build backend
+cd backend
+go build -o iplist .
+
+# Run with config file (default: config.json in working directory)
+./iplist -config /etc/iplist/config.json
+
+# Or use a custom config path
+./iplist -config ./myconfig.json
+```
+
+Environment variables override values in the config file:
+
+```bash
+JWT_SECRET=mysecret DB_PATH=/data/iplist.db ./iplist
+```
+
+---
 
 ### Development
 
@@ -48,42 +100,19 @@ docker compose -f docker-compose.dev.yml up
 
 Hot-reload is enabled for both the Go backend (`air`) and the Vite frontend dev server.
 
+---
+
 ## Configuration
 
-Configuration is loaded from a JSON file (default `config.json` in the working directory). Environment variables override any value in the file.
+Settings are loaded from a JSON config file. Environment variables always take precedence over the file.
 
-```jsonc
-// config.json
-{
-  "db_path":    "iplist.db",
-  "jwt_secret": "change-me-to-a-long-random-string",
-  "port":       "8080"
-}
-```
+| Key / Env variable          | Default                    | Description                 |
+|-----------------------------|----------------------------|-----------------------------|
+| `db_path` / `DB_PATH`       | `iplist.db`                | Path to the SQLite database |
+| `jwt_secret` / `JWT_SECRET` | `change-me-in-production`  | Secret key for signing JWTs |
+| `port` / `PORT`             | `8080`                     | Port the server listens on  |
 
-Copy the example file to get started:
-
-```bash
-cp config.example.json config.json
-```
-
-Use a different config file with the `-config` flag:
-
-```bash
-./iplist -config /etc/iplist/config.json
-```
-
-| Key / Env variable       | Default                    | Description                  |
-|--------------------------|----------------------------|------------------------------|
-| `db_path` / `DB_PATH`    | `iplist.db`                | Path to the SQLite database  |
-| `jwt_secret` / `JWT_SECRET` | `change-me-in-production` | Secret key for signing JWTs |
-| `port` / `PORT`          | `8080`                     | Port the server listens on   |
-
-Generate a strong JWT secret:
-
-```bash
-openssl rand -hex 32
-```
+The config file path defaults to `config.json` in the working directory and can be changed with the `-config` flag. If the file does not exist, the application falls back to environment variables and built-in defaults.
 
 ## API
 
