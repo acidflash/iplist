@@ -1,7 +1,12 @@
+networks:
+  iplist-net:
+
 services:
   backend:
     build: ./backend
     restart: unless-stopped
+    networks:
+      - iplist-net
     environment:
       DB_PATH: ${DB_PATH:-/data/iplist.db}
       JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string}
@@ -11,8 +16,10 @@ services:
 
   frontend:
     build: ./frontend
+    restart: unless-stopped
+    networks:
+      - iplist-net
     ports:
       - "${PORT:-8080}:80"
     depends_on:
       - backend
-    restart: unless-stopped
