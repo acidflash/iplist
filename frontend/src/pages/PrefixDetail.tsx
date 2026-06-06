@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Plus, Pencil, Trash2, ChevronRight, Server, ChevronsRight, Copy, Check } from 'lucide-react'
-import { getPrefix, createAddress, updateAddress, deleteAddress, getSubnets, createPrefix, getVLANs } from '../api/client'
+import { getPrefix, createAddress, updateAddress, deleteAddress, getSubnets, createPrefix, getVLANs, pingPrefix } from '../api/client'
+import type { PingResult } from '../api/client'
 import type { Prefix, IPAddress, Status, SplitResponse, VLAN, NetworkInfo } from '../types'
 import { Modal } from '../components/Modal'
 import { StatusBadge } from '../components/StatusBadge'
@@ -38,6 +39,8 @@ export function PrefixDetail() {
   const [splitResult, setSplitResult] = useState<SplitResponse | null>(null)
   const [splitLoading, setSplitLoading] = useState(false)
   const [splitKey, setSplitKey] = useState(0)
+  const [pingMap, setPingMap] = useState<Map<number, boolean>>(new Map())
+  const [pinging, setPinging] = useState(false)
 
   const load = useCallback(async () => {
     if (!id) return
@@ -70,6 +73,18 @@ export function PrefixDetail() {
   const handleDelete = async (a: IPAddress) => {
     if (!confirm(t.prefixDetail.confirmDeleteAddr(a.address))) return
     await deleteAddress(a.id); load()
+  }
+  const handlePing = async () => {
+    if (!prefix || pinging) return
+    setPinging(true)
+    try {
+      const results: PingResult[] = await pingPrefix(prefix.id)
+      const m = new Map<number, boolean>()
+      results.forEach(r => m.set(r.address_id, r.alive))
+      setPingMap(m)
+    } finally {
+      setPinging(false)
+    }
   }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError('')
@@ -216,11 +231,22 @@ export function PrefixDetail() {
           <h2 className="font-medium" style={{ fontSize: '13px', color: 'var(--c-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             {t.prefixDetail.addresses} <span style={{ color: 'var(--c-text-3)', fontWeight: 400, marginLeft: 6 }}>{addresses.length}</span>
           </h2>
-          {isAdmin && (
-            <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
-              <Plus size={14} /> {t.prefixDetail.addAddress}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handlePing}
+              disabled={pinging || addresses.length === 0}
+              className="btn-ghost flex items-center gap-1.5"
+              style={{ opacity: pinging || addresses.length === 0 ? 0.5 : 1 }}
+            >
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: pinging ? 'var(--c-warning)' : 'var(--c-success)', display: 'inline-block' }} />
+              {pinging ? 'Pingar…' : 'Pinga alla'}
             </button>
-          )}
+            {isAdmin && (
+              <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
+                <Plus size={14} /> {t.prefixDetail.addAddress}
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--c-border-sub)' }}>
@@ -250,7 +276,17 @@ export function PrefixDetail() {
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--c-raised)')}
                   onMouseLeave={e => (e.currentTarget.style.background = '')}>
                   <td className="px-4 py-2.5">
-                    <code className="font-ip" style={{ fontSize: '13.5px', color: 'var(--c-accent)' }}>{a.address}</code>
+                    <div className="flex items-center gap-2">
+                      {pingMap.size > 0 && (
+                        <span style={{
+                          width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+                          background: pingMap.has(a.id)
+                            ? (pingMap.get(a.id) ? 'var(--c-success)' : 'var(--c-danger)')
+                            : 'var(--c-text-3)',
+                        }} />
+                      )}
+                      <code className="font-ip" style={{ fontSize: '13.5px', color: 'var(--c-accent)' }}>{a.address}</code>
+                    </div>
                   </td>
                   <td className="px-4 py-2.5" style={{ fontSize: '14px', color: 'var(--c-text)' }}>
                     {a.hostname || <span style={{ color: 'var(--c-text-3)' }}>–</span>}

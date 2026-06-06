@@ -82,3 +82,7 @@ export const createUser = (data: { username: string; password: string; role: str
 export const updateUser = (id: number, data: { password?: string; role?: string }) =>
   api.put(`/users/${id}`, data)
 export const deleteUser = (id: number) => api.delete(`/users/${id}`)
+
+// Ping
+export interface PingResult { address_id: number; address: string; alive: boolean }
+export const pingPrefix = (id: number) => api.get<PingResult[]>(`/prefixes/${id}/ping`).then(r => r.data)

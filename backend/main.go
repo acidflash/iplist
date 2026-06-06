@@ -95,6 +95,7 @@ func main() {
 			r.Get("/prefixes", ListPrefixes(prefixRepo))
 			r.Get("/prefixes/{id}", GetPrefix(prefixRepo))
 			r.Get("/prefixes/{id}/subnets", GetSubnets(prefixRepo))
+				r.Get("/prefixes/{id}/ping", PingPrefix(addressRepo))
 			r.Get("/vlans", ListVLANs(vlanRepo))
 			r.Get("/vlans/{id}", GetVLAN(vlanRepo, prefixRepo))
 			r.Get("/addresses", ListAddresses(addressRepo))
