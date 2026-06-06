@@ -1,6 +1,7 @@
 *.db
 *.db-shm
 *.db-wal
+data/
 backend/tmp/
 backend/server
 backend/iplist

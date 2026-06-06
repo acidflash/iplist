@@ -6,7 +6,7 @@ services:
       DB_PATH: ${DB_PATH:-/data/iplist.db}
       JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string}
     volumes:
-      - sqlite_data:/data
+      - ./data:/data
 
   frontend:
     build: ./frontend
@@ -15,6 +15,3 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
-
-volumes:
-  sqlite_data:
