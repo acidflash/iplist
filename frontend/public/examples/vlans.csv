@@ -1,0 +1,9 @@
+vid,name,description,status
+10,Management,Management network for network devices,active
+20,Servers,Production server VLAN,active
+30,Clients,End-user workstations,active
+40,DMZ,Demilitarized zone,active
+50,Storage,SAN and NAS traffic,active
+100,Voice,VoIP phones,active
+200,Guest,Guest wireless network,reserved
+999,Test,Lab and testing,deprecated

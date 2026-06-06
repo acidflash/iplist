@@ -1,0 +1,8 @@
+address,hostname,dns_name,description,status
+10.0.0.1,gw01,gw01.example.com,Core gateway,active
+10.0.0.2,sw01,sw01.example.com,Core switch,active
+10.0.0.10,server01,server01.example.com,Web server,active
+10.0.0.11,server02,server02.example.com,App server,active
+10.0.0.12,server03,server03.example.com,Database server,active
+10.0.0.20,printer01,,Office printer,active
+10.0.0.100,spare01,,,reserved

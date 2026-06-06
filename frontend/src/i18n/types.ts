@@ -175,6 +175,7 @@ export interface Translations {
     resultImported: (n: number) => string
     resultSkipped: (n: number) => string
     rowError: (row: number, err: string) => string
+    downloadExample: string
     done: string
   }
 

@@ -150,6 +150,7 @@ export function VLANs() {
         <ImportModal
           what={t.vlans.title}
           formatHint="vid, name, description, status"
+          exampleFile="/examples/vlans.csv"
           onImport={importVLANs}
           onDone={load}
           onClose={() => setShowImport(false)}

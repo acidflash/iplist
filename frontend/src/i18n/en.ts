@@ -158,6 +158,7 @@ const en: Translations = {
     resultImported: (n) => `${n} record${n !== 1 ? 's' : ''} imported`,
     resultSkipped: (n) => `${n} record${n !== 1 ? 's' : ''} skipped`,
     rowError: (row, err) => `Row ${row}: ${err}`,
+    downloadExample: 'Download example file',
     done: 'Done',
   },
 

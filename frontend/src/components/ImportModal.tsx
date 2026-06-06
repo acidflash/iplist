@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Upload, CheckCircle, AlertCircle } from 'lucide-react'
+import { Upload, CheckCircle, AlertCircle, Download } from 'lucide-react'
 import { Modal } from './Modal'
 import type { ImportResult } from '../api/client'
 import { useT } from '../i18n'
@@ -7,12 +7,13 @@ import { useT } from '../i18n'
 interface Props {
   what: string
   formatHint: string       // e.g. "vid, name, description, status"
+  exampleFile: string      // path to example CSV in /public, e.g. "/examples/vlans.csv"
   onImport: (file: File) => Promise<ImportResult>
   onDone: () => void
   onClose: () => void
 }
 
-export function ImportModal({ what, formatHint, onImport, onDone, onClose }: Props) {
+export function ImportModal({ what, formatHint, exampleFile, onImport, onDone, onClose }: Props) {
   const { t } = useT()
   const inputRef = useRef<HTMLInputElement>(null)
   const [file, setFile] = useState<File | null>(null)
@@ -80,10 +81,22 @@ export function ImportModal({ what, formatHint, onImport, onDone, onClose }: Pro
           />
         </div>
 
-        {/* Format hint */}
-        <div style={{ fontSize: '12px', color: 'var(--c-text-3)' }}>
-          <span style={{ fontWeight: 500 }}>{t.importCSV.format}</span>{' '}
-          <code className="font-ip" style={{ fontSize: '11.5px', color: 'var(--c-text-2)' }}>{formatHint}</code>
+        {/* Format hint + example download */}
+        <div className="flex items-center justify-between gap-4">
+          <div style={{ fontSize: '12px', color: 'var(--c-text-3)' }}>
+            <span style={{ fontWeight: 500 }}>{t.importCSV.format}</span>{' '}
+            <code className="font-ip" style={{ fontSize: '11.5px', color: 'var(--c-text-2)' }}>{formatHint}</code>
+          </div>
+          <a
+            href={exampleFile}
+            download
+            className="flex items-center gap-1 flex-shrink-0"
+            style={{ fontSize: '12px', color: 'var(--c-accent)', textDecoration: 'none' }}
+            onMouseEnter={e => (e.currentTarget.style.textDecoration = 'underline')}
+            onMouseLeave={e => (e.currentTarget.style.textDecoration = 'none')}
+          >
+            <Download size={12} /> {t.importCSV.downloadExample}
+          </a>
         </div>
 
         {/* Result */}

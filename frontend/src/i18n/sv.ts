@@ -158,6 +158,7 @@ const sv: Translations = {
     resultImported: (n) => `${n} poster importerade`,
     resultSkipped: (n) => `${n} poster hoppades över`,
     rowError: (row, err) => `Rad ${row}: ${err}`,
+    downloadExample: 'Ladda ned exempelfil',
     done: 'Klar',
   },
 

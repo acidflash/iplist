@@ -171,6 +171,7 @@ export function Addresses() {
         <ImportModal
           what={t.addresses.title}
           formatHint="address, hostname, dns_name, description, status"
+          exampleFile="/examples/addresses.csv"
           onImport={importAddresses}
           onDone={load}
           onClose={() => setShowImport(false)}
