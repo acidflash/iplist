@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"net"
 	"net/http"
 	"os/exec"
@@ -155,8 +154,6 @@ func DiscoverPrefix(prefixRepo *PrefixRepo, addrRepo *AddressRepo) http.HandlerF
 		}
 		wg.Wait()
 
-		log.Printf("discover: prefix_id=%d total_ips=%d alive=%d global_known=%d", id, len(ips), func() int { n := 0; for _, r := range results { if r.alive { n++ } }; return n }(), len(globalByIP))
-
 		added, updated, alive := 0, 0, 0
 		var errs []string
 		for _, res := range results {
@@ -165,7 +162,6 @@ func DiscoverPrefix(prefixRepo *PrefixRepo, addrRepo *AddressRepo) http.HandlerF
 			}
 			alive++
 			if known, ok := globalByIP[res.ip]; ok {
-				log.Printf("discover: %s already in DB (id=%d status=%s prefix_id=%v)", res.ip, known.ID, known.Status, known.PrefixID)
 				if known.DNSName == "" && res.ptr != "" {
 					addrRepo.db.Exec(
 						"UPDATE ip_addresses SET dns_name=?, updated_at=? WHERE id=?",
@@ -174,7 +170,6 @@ func DiscoverPrefix(prefixRepo *PrefixRepo, addrRepo *AddressRepo) http.HandlerF
 					updated++
 				}
 			} else {
-				log.Printf("discover: %s is new, creating as pending", res.ip)
 				_, err := addrRepo.Create(addressRequest{
 					Address:  res.ip,
 					PrefixID: &id,
@@ -182,10 +177,8 @@ func DiscoverPrefix(prefixRepo *PrefixRepo, addrRepo *AddressRepo) http.HandlerF
 					Status:   "pending",
 				})
 				if err != nil {
-					log.Printf("discover: create %s failed: %v", res.ip, err)
 					errs = append(errs, res.ip+": "+err.Error())
 				} else {
-					log.Printf("discover: create %s ok", res.ip)
 					added++
 				}
 			}
