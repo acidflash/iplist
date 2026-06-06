@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"net"
 	"net/http"
 	"sort"
@@ -385,5 +386,205 @@ func DeletePrefix(repo *PrefixRepo) http.HandlerFunc {
 			return
 		}
 		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+// Subnet splitting
+
+type SubnetInfo struct {
+	Subnet    string `json:"subnet"`
+	Hosts     string `json:"hosts"`
+	Allocated bool   `json:"allocated"`
+	PrefixID  *int64 `json:"prefix_id,omitempty"`
+}
+
+type SplitResponse struct {
+	Parent       string       `json:"parent"`
+	NewPrefixLen int          `json:"new_prefix_len"`
+	TotalCount   string       `json:"total_count"`
+	Subnets      []SubnetInfo `json:"subnets"`
+	Truncated    bool         `json:"truncated"`
+}
+
+const maxSplitSubnets = 512
+
+func intToIP(n *big.Int, size int) net.IP {
+	ip := make(net.IP, size)
+	b := n.Bytes()
+	if len(b) <= size {
+		copy(ip[size-len(b):], b)
+	} else {
+		copy(ip, b[len(b)-size:])
+	}
+	return ip
+}
+
+func subnetHostCount(prefixLen, bits int) string {
+	hostBits := bits - prefixLen
+	if bits == 32 {
+		if hostBits >= 2 {
+			return fmt.Sprintf("%d", (int64(1)<<hostBits)-2)
+		}
+		return fmt.Sprintf("%d", int64(1)<<hostBits)
+	}
+	if hostBits < 63 {
+		return fmt.Sprintf("%d", int64(1)<<hostBits)
+	}
+	return new(big.Int).Lsh(big.NewInt(1), uint(hostBits)).String()
+}
+
+func (r *PrefixRepo) SplitSubnets(p *Prefix, newLen int) (*SplitResponse, error) {
+	_, network, err := net.ParseCIDR(p.Prefix)
+	if err != nil {
+		return nil, err
+	}
+
+	ones, bits := network.Mask.Size()
+	isIPv4 := bits == 32
+	ipSize := bits / 8
+
+	if newLen <= ones || newLen > bits {
+		return nil, fmt.Errorf("prefix_len %d is out of range (%d+1..%d)", newLen, ones, bits)
+	}
+
+	diffBits := uint(newLen - ones)
+	totalCount := new(big.Int).Lsh(big.NewInt(1), diffBits)
+	subnetSize := new(big.Int).Lsh(big.NewInt(1), uint(bits-newLen))
+
+	truncated := totalCount.Cmp(big.NewInt(maxSplitSubnets)) > 0
+	shown := maxSplitSubnets
+	if !truncated {
+		shown = int(totalCount.Int64())
+	}
+
+	var baseIP net.IP
+	if isIPv4 {
+		baseIP = network.IP.To4()
+	} else {
+		baseIP = network.IP.To16()
+	}
+	baseInt := new(big.Int).SetBytes(baseIP)
+	hosts := subnetHostCount(newLen, bits)
+
+	// Fetch all prefixes to find which subnets are allocated
+	rows, err := r.db.Query("SELECT id, prefix FROM prefixes WHERE id != ?", p.ID)
+	type prow struct {
+		id     int64
+		prefix string
+	}
+	var allPrefixes []prow
+	if err == nil {
+		for rows.Next() {
+			var pr prow
+			if rows.Scan(&pr.id, &pr.prefix) == nil {
+				allPrefixes = append(allPrefixes, pr)
+			}
+		}
+		rows.Close()
+	}
+
+	// Build allocation map: subnet CIDR → {prefixID, exact match}
+	type allocInfo struct {
+		prefixID int64
+		exact    bool
+	}
+	subnetAlloc := make(map[string]allocInfo)
+
+	for _, pr := range allPrefixes {
+		_, prNet, err := net.ParseCIDR(pr.prefix)
+		if err != nil {
+			continue
+		}
+		prOnes, prBits := prNet.Mask.Size()
+		if prBits != bits {
+			continue
+		}
+		if !network.Contains(prNet.IP) {
+			continue
+		}
+
+		var prIP net.IP
+		if isIPv4 {
+			prIP = prNet.IP.To4()
+		} else {
+			prIP = prNet.IP.To16()
+		}
+		prInt := new(big.Int).SetBytes(prIP)
+
+		idx := new(big.Int).Div(new(big.Int).Sub(prInt, baseInt), subnetSize)
+		if idx.Sign() < 0 || idx.Cmp(totalCount) >= 0 {
+			continue
+		}
+
+		subnetIP := intToIP(new(big.Int).Add(baseInt, new(big.Int).Mul(idx, subnetSize)), ipSize)
+		subnetCIDR := fmt.Sprintf("%s/%d", subnetIP.String(), newLen)
+
+		exact := prOnes == newLen && pr.prefix == subnetCIDR
+		if existing, ok := subnetAlloc[subnetCIDR]; ok {
+			if exact && !existing.exact {
+				subnetAlloc[subnetCIDR] = allocInfo{prefixID: pr.id, exact: true}
+			}
+		} else {
+			a := allocInfo{}
+			if exact {
+				a = allocInfo{prefixID: pr.id, exact: true}
+			}
+			subnetAlloc[subnetCIDR] = a
+		}
+	}
+
+	subnets := make([]SubnetInfo, 0, shown)
+	for i := 0; i < shown; i++ {
+		offset := new(big.Int).Mul(big.NewInt(int64(i)), subnetSize)
+		subnetIP := intToIP(new(big.Int).Add(baseInt, offset), ipSize)
+		subnetCIDR := fmt.Sprintf("%s/%d", subnetIP.String(), newLen)
+
+		info := SubnetInfo{Subnet: subnetCIDR, Hosts: hosts}
+		if alloc, ok := subnetAlloc[subnetCIDR]; ok {
+			info.Allocated = true
+			if alloc.exact {
+				id := alloc.prefixID
+				info.PrefixID = &id
+			}
+		}
+		subnets = append(subnets, info)
+	}
+
+	return &SplitResponse{
+		Parent:       p.Prefix,
+		NewPrefixLen: newLen,
+		TotalCount:   totalCount.String(),
+		Subnets:      subnets,
+		Truncated:    truncated,
+	}, nil
+}
+
+func GetSubnets(repo *PrefixRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+		if err != nil {
+			respondError(w, http.StatusBadRequest, "invalid id")
+			return
+		}
+
+		newLen, err := strconv.Atoi(r.URL.Query().Get("prefix_len"))
+		if err != nil || newLen < 1 || newLen > 128 {
+			respondError(w, http.StatusBadRequest, "prefix_len must be a valid integer")
+			return
+		}
+
+		p, err := repo.GetByID(id)
+		if err != nil {
+			respondError(w, http.StatusNotFound, err.Error())
+			return
+		}
+
+		result, err := repo.SplitSubnets(p, newLen)
+		if err != nil {
+			respondError(w, http.StatusBadRequest, err.Error())
+			return
+		}
+
+		respondJSON(w, http.StatusOK, result)
 	}
 }

@@ -275,7 +275,7 @@ export function Prefixes() {
           <form onSubmit={handleSubmit} className="space-y-3.5">
             <div>
               <label className="lbl">CIDR *</label>
-              <input required type="text" placeholder="10.0.0.0/24"
+              <input required type="text" placeholder="10.0.0.0/24 eller 2001:db8::/32"
                 value={form.prefix} onChange={e => setForm(f => ({ ...f, prefix: e.target.value }))}
                 className="ctrl mono" />
             </div>

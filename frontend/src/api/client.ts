@@ -1,5 +1,5 @@
 import axios from 'axios'
-import type { Prefix, VLAN, IPAddress, Stats } from '../types'
+import type { Prefix, VLAN, IPAddress, Stats, SplitResponse } from '../types'
 
 const api = axios.create({ baseURL: '/api/v1' })
 
@@ -33,6 +33,8 @@ export const getPrefix = (id: number) => api.get<Prefix>(`/prefixes/${id}`).then
 export const createPrefix = (data: Partial<Prefix>) => api.post<Prefix>('/prefixes', data).then(r => r.data)
 export const updatePrefix = (id: number, data: Partial<Prefix>) => api.put<Prefix>(`/prefixes/${id}`, data).then(r => r.data)
 export const deletePrefix = (id: number) => api.delete(`/prefixes/${id}`)
+export const getSubnets = (id: number, prefixLen: number) =>
+  api.get<SplitResponse>(`/prefixes/${id}/subnets`, { params: { prefix_len: prefixLen } }).then(r => r.data)
 
 // VLANs
 export const getVLANs = () => api.get<VLAN[]>('/vlans').then(r => r.data)

@@ -82,7 +82,7 @@ export function exportPrefixes(
     download(toYAML(flat as unknown as object[]), `${name}.yaml`, 'text/yaml')
   } else {
     const headers = ['id','prefix','name','description','status','parent_id','vlan_id','vlan_vid','vlan_name','total_ips','used_ips','utilization','created_at']
-    const rows = flat.map(p => headers.map(h => (p as Record<string, unknown>)[h] as string | number | null))
+    const rows = flat.map(p => headers.map(h => (p as unknown as Record<string, unknown>)[h] as string | number | null))
     download(toCSV(headers, rows), `${name}.csv`, 'text/csv')
   }
 }

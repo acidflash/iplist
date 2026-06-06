@@ -47,3 +47,18 @@ export interface Stats {
   total_addresses: number
   utilization: number
 }
+
+export interface SubnetInfo {
+  subnet: string
+  hosts: string
+  allocated: boolean
+  prefix_id?: number
+}
+
+export interface SplitResponse {
+  parent: string
+  new_prefix_len: number
+  total_count: string
+  subnets: SubnetInfo[]
+  truncated: boolean
+}

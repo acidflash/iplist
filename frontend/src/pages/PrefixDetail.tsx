@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Plus, Pencil, Trash2, Network, ChevronRight, Server } from 'lucide-react'
-import { getPrefix, createAddress, updateAddress, deleteAddress } from '../api/client'
-import type { Prefix, IPAddress, Status } from '../types'
+import { ArrowLeft, Plus, Pencil, Trash2, ChevronRight, Server, ChevronsRight } from 'lucide-react'
+import { getPrefix, createAddress, updateAddress, deleteAddress, getSubnets } from '../api/client'
+import type { Prefix, IPAddress, Status, SplitResponse } from '../types'
 import { Modal } from '../components/Modal'
 import { StatusBadge } from '../components/StatusBadge'
 import { UtilizationBar } from '../components/UtilizationBar'
@@ -23,6 +23,9 @@ export function PrefixDetail() {
   const [editing, setEditing] = useState<IPAddress | null>(null)
   const [form, setForm] = useState<AddrForm>(emptyForm)
   const [error, setError] = useState('')
+  const [splitLen, setSplitLen] = useState<number | null>(null)
+  const [splitResult, setSplitResult] = useState<SplitResponse | null>(null)
+  const [splitLoading, setSplitLoading] = useState(false)
 
   const load = useCallback(async () => {
     if (!id) return
@@ -31,6 +34,15 @@ export function PrefixDetail() {
   }, [id])
 
   useEffect(() => { load() }, [load])
+
+  useEffect(() => {
+    if (!id || splitLen === null) return
+    setSplitLoading(true)
+    getSubnets(parseInt(id), splitLen)
+      .then(setSplitResult)
+      .catch(() => setSplitResult(null))
+      .finally(() => setSplitLoading(false))
+  }, [id, splitLen])
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setError(''); setShowModal(true) }
   const openEdit = (a: IPAddress) => {
@@ -117,6 +129,15 @@ export function PrefixDetail() {
           )}
         </div>
       </div>
+
+      {/* Subnet Calculator */}
+      <SubnetCalculator
+        prefix={prefix}
+        splitLen={splitLen}
+        onSplitLenChange={len => { setSplitLen(len); setSplitResult(null) }}
+        splitResult={splitResult}
+        splitLoading={splitLoading}
+      />
 
       {/* Child prefixes */}
       {children.length > 0 && (
@@ -239,7 +260,7 @@ export function PrefixDetail() {
           <form onSubmit={handleSubmit} className="space-y-3.5">
             <div>
               <label className="lbl">IP-adress *</label>
-              <input required type="text" placeholder="10.10.1.100"
+              <input required type="text" placeholder="192.168.1.10 eller 2001:db8::1"
                 value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
                 className="ctrl mono" />
             </div>
@@ -285,6 +306,136 @@ export function PrefixDetail() {
         </Modal>
       )}
     </div>
+  )
+}
+
+function SubnetCalculator({
+  prefix, splitLen, onSplitLenChange, splitResult, splitLoading,
+}: {
+  prefix: Prefix
+  splitLen: number | null
+  onSplitLenChange: (len: number) => void
+  splitResult: SplitResponse | null
+  splitLoading: boolean
+}) {
+  const parts = prefix.prefix.split('/')
+  const currentLen = parseInt(parts[1])
+  const isIPv6 = prefix.prefix.includes(':')
+  const maxLen = isIPv6 ? 128 : 32
+
+  if (currentLen >= maxLen) return null
+
+  const options: number[] = []
+  for (let i = currentLen + 1; i <= maxLen; i++) options.push(i)
+
+  const effectiveSplitLen = splitLen ?? (currentLen + 1)
+
+  return (
+    <section className="mb-5">
+      <h2
+        className="font-medium mb-2"
+        style={{ fontSize: '13px', color: 'var(--c-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+      >
+        Subnätskalkylator
+      </h2>
+      <div
+        className="rounded-lg p-4"
+        style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border-sub)' }}
+      >
+        <div className="flex items-center gap-3 mb-4">
+          <code className="font-ip" style={{ fontSize: '13.5px', color: 'var(--c-accent)' }}>{prefix.prefix}</code>
+          <ChevronsRight size={14} style={{ color: 'var(--c-text-3)' }} />
+          <div className="flex items-center gap-2">
+            <label style={{ fontSize: '13px', color: 'var(--c-text-2)' }}>Dela upp i</label>
+            <select
+              value={effectiveSplitLen}
+              onChange={e => onSplitLenChange(parseInt(e.target.value))}
+              className="ctrl"
+              style={{ width: 'auto', padding: '3px 8px', fontSize: '13px', fontFamily: 'var(--font-mono)' }}
+            >
+              {options.map(n => <option key={n} value={n}>/{n}</option>)}
+            </select>
+          </div>
+          {splitLen === null && (
+            <button
+              onClick={() => onSplitLenChange(currentLen + 1)}
+              className="btn-primary"
+              style={{ fontSize: '12px', padding: '4px 12px' }}
+            >
+              Beräkna
+            </button>
+          )}
+        </div>
+
+        {splitLoading && (
+          <p style={{ fontSize: '13px', color: 'var(--c-text-3)' }}>Beräknar…</p>
+        )}
+
+        {splitResult && !splitLoading && (
+          <>
+            <p style={{ fontSize: '12px', color: 'var(--c-text-3)', marginBottom: '10px' }}>
+              {splitResult.truncated
+                ? `Visar ${splitResult.subnets.length} av ${splitResult.total_count} subnät`
+                : `${splitResult.total_count} subnät`}
+              {' · '}{splitResult.subnets[0]?.hosts} värdar per subnät
+            </p>
+            <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--c-border-sub)' }}>
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr style={{ background: 'var(--c-base)', borderBottom: '1px solid var(--c-border)' }}>
+                    {['Subnät', `Värdar${isIPv6 ? '' : ' (användbara)'}`, 'Status'].map(h => (
+                      <th key={h} className="px-4 py-2 text-left font-medium"
+                        style={{ fontSize: '11.5px', color: 'var(--c-text-3)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {splitResult.subnets.map(s => (
+                    <tr key={s.subnet} style={{ borderBottom: '1px solid var(--c-border-sub)', background: 'var(--c-surface)' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--c-raised)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'var(--c-surface)')}>
+                      <td className="px-4 py-2">
+                        {s.prefix_id ? (
+                          <Link to={`/prefixes/${s.prefix_id}`}>
+                            <code className="font-ip hover:underline" style={{ fontSize: '13px', color: 'var(--c-accent)' }}>
+                              {s.subnet}
+                            </code>
+                          </Link>
+                        ) : (
+                          <code className="font-ip" style={{ fontSize: '13px', color: 'var(--c-text)' }}>{s.subnet}</code>
+                        )}
+                      </td>
+                      <td className="px-4 py-2 font-ip tabular-nums" style={{ fontSize: '13px', color: 'var(--c-text-2)' }}>
+                        {s.hosts}
+                      </td>
+                      <td className="px-4 py-2">
+                        {s.allocated ? (
+                          <span
+                            className="inline-flex items-center gap-1 rounded px-2 py-0.5"
+                            style={{ fontSize: '11.5px', background: 'oklch(62% 0.18 25 / 0.10)', border: '1px solid oklch(62% 0.18 25 / 0.22)', color: 'var(--c-danger)' }}
+                          >
+                            Allokerat
+                          </span>
+                        ) : (
+                          <span
+                            className="inline-flex items-center gap-1 rounded px-2 py-0.5"
+                            style={{ fontSize: '11.5px', background: 'oklch(65% 0.18 145 / 0.10)', border: '1px solid oklch(65% 0.18 145 / 0.22)', color: 'oklch(65% 0.18 145)' }}
+                          >
+                            Ledigt
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
+      </div>
+    </section>
   )
 }
 
