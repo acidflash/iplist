@@ -4,6 +4,8 @@ services:
     restart: unless-stopped
     environment:
       DB_PATH: /data/iplist.db
+      PORT: "3000"
+      JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string}
     volumes:
       - sqlite_data:/data
 

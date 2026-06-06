@@ -42,28 +42,23 @@ A self-hosted IP Address Management (IPAM) tool for tracking VLANs, IP prefixes,
 
 ### Option 1 — Docker Compose (recommended)
 
-**1. Clone the repo and create a config file:**
+**1. Clone the repo:**
 
 ```bash
 git clone https://github.com/acidflash/iplist.git
 cd iplist
-cp config.example.json config.json
 ```
 
-**2. Edit `config.json` and set a strong JWT secret:**
-
-```json
-{
-  "db_path":    "/data/iplist.db",
-  "jwt_secret": "replace-with-a-long-random-string",
-  "port":       "8080"
-}
-```
-
-Generate a secret with:
+**2. Set a strong JWT secret:**
 
 ```bash
-openssl rand -hex 32
+export JWT_SECRET=$(openssl rand -hex 32)
+```
+
+Or create a `.env` file in the project root:
+
+```env
+JWT_SECRET=replace-with-a-long-random-string
 ```
 
 **3. Start the application:**
@@ -73,6 +68,8 @@ docker compose up -d
 ```
 
 The app is available at [http://localhost:8080](http://localhost:8080).
+
+> **Architecture:** Nginx serves the frontend on container port 80 (mapped to host port 8080) and proxies `/api/` requests to the Go backend on the internal port 3000. Only port 8080 is exposed to the host.
 
 **Default credentials — change these immediately after first login:**
 
@@ -125,7 +122,7 @@ Settings are loaded from a JSON config file. Environment variables always take p
 |-----------------------------|----------------------------|-----------------------------|
 | `db_path` / `DB_PATH`       | `iplist.db`                | Path to the SQLite database |
 | `jwt_secret` / `JWT_SECRET` | `change-me-in-production`  | Secret key for signing JWTs |
-| `port` / `PORT`             | `8080`                     | Port the server listens on  |
+| `port` / `PORT`             | `3000`                     | Internal port the Go server listens on (nginx proxies to this) |
 
 The config file path defaults to `config.json` in the working directory and can be changed with the `-config` flag. If the file does not exist, the application falls back to environment variables and built-in defaults.
 
