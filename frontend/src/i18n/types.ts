@@ -165,6 +165,19 @@ export interface Translations {
     confirmDelete: (addr: string) => string
   }
 
+  importCSV: {
+    btn: string
+    title: (what: string) => string
+    dropzone: string
+    format: string
+    submit: string
+    importing: string
+    resultImported: (n: number) => string
+    resultSkipped: (n: number) => string
+    rowError: (row: number, err: string) => string
+    done: string
+  }
+
   users: {
     title: string
     count: (n: number) => string

@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { Plus, Pencil, Trash2, Server } from 'lucide-react'
-import { getAddresses, createAddress, updateAddress, deleteAddress, getPrefixes } from '../api/client'
+import { Plus, Pencil, Trash2, Server, Upload } from 'lucide-react'
+import { getAddresses, createAddress, updateAddress, deleteAddress, getPrefixes, importAddresses } from '../api/client'
 import type { IPAddress, Prefix, Status } from '../types'
 import { Modal } from '../components/Modal'
+import { ImportModal } from '../components/ImportModal'
 import { StatusBadge } from '../components/StatusBadge'
 import { ExportMenu } from '../components/ExportMenu'
 import { exportAddresses } from '../utils/export'
@@ -24,6 +25,7 @@ export function Addresses() {
   const [editing, setEditing] = useState<IPAddress | null>(null)
   const [form, setForm] = useState<FormData>(emptyForm)
   const [error, setError] = useState('')
+  const [showImport, setShowImport] = useState(false)
   const [filterPrefix, setFilterPrefix] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [search, setSearch] = useState('')
@@ -77,9 +79,18 @@ export function Addresses() {
             disabled={addresses.length === 0}
           />
           {isAdmin && (
-            <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
-              <Plus size={14} /> {t.common.add}
-            </button>
+            <>
+              <button
+                onClick={() => setShowImport(true)}
+                className="btn-ghost flex items-center gap-1.5"
+                style={{ fontSize: '13px' }}
+              >
+                <Upload size={13} /> {t.importCSV.btn}
+              </button>
+              <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
+                <Plus size={14} /> {t.common.add}
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -155,6 +166,16 @@ export function Addresses() {
           </tbody>
         </table>
       </div>
+
+      {showImport && (
+        <ImportModal
+          what={t.addresses.title}
+          formatHint="address, hostname, dns_name, description, status"
+          onImport={importAddresses}
+          onDone={load}
+          onClose={() => setShowImport(false)}
+        />
+      )}
 
       {showModal && (
         <Modal title={editing ? t.addresses.modalEdit : t.addresses.modalCreate} onClose={() => setShowModal(false)}>

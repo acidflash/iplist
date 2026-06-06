@@ -109,10 +109,12 @@ func main() {
 				r.Delete("/prefixes/{id}", DeletePrefix(prefixRepo))
 
 				r.Post("/vlans", CreateVLAN(vlanRepo))
+				r.Post("/vlans/import", ImportVLANs(vlanRepo))
 				r.Put("/vlans/{id}", UpdateVLAN(vlanRepo))
 				r.Delete("/vlans/{id}", DeleteVLAN(vlanRepo))
 
 				r.Post("/addresses", CreateAddress(addressRepo, prefixRepo))
+				r.Post("/addresses/import", ImportAddresses(addressRepo))
 				r.Put("/addresses/{id}", UpdateAddress(addressRepo))
 				r.Delete("/addresses/{id}", DeleteAddress(addressRepo))
 

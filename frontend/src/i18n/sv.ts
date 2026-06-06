@@ -148,6 +148,19 @@ const sv: Translations = {
     confirmDelete: (addr) => `Är du säker på att du vill ta bort ${addr}?`,
   },
 
+  importCSV: {
+    btn: 'Importera CSV',
+    title: (what) => `Importera ${what}`,
+    dropzone: 'Dra och släpp en CSV-fil här, eller klicka för att välja fil',
+    format: 'Förväntade kolumner:',
+    submit: 'Importera',
+    importing: 'Importerar...',
+    resultImported: (n) => `${n} poster importerade`,
+    resultSkipped: (n) => `${n} poster hoppades över`,
+    rowError: (row, err) => `Rad ${row}: ${err}`,
+    done: 'Klar',
+  },
+
   users: {
     title: 'Användare',
     count: (n) => `${n} användare`,

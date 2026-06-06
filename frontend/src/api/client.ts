@@ -51,6 +51,24 @@ export const createAddress = (data: Partial<IPAddress>) => api.post<IPAddress>('
 export const updateAddress = (id: number, data: Partial<IPAddress>) => api.put<IPAddress>(`/addresses/${id}`, data).then(r => r.data)
 export const deleteAddress = (id: number) => api.delete(`/addresses/${id}`)
 
+// Import
+export interface ImportResult {
+  imported: number
+  skipped: number
+  errors: { row: number; error: string }[]
+}
+
+const csvForm = (file: File) => {
+  const fd = new FormData()
+  fd.append('file', file)
+  return fd
+}
+
+export const importVLANs = (file: File) =>
+  api.post<ImportResult>('/vlans/import', csvForm(file), { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data)
+export const importAddresses = (file: File) =>
+  api.post<ImportResult>('/addresses/import', csvForm(file), { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data)
+
 // Stats
 export const getStats = () => api.get<Stats>('/stats').then(r => r.data)
 

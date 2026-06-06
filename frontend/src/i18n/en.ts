@@ -148,6 +148,19 @@ const en: Translations = {
     confirmDelete: (addr) => `Are you sure you want to delete ${addr}?`,
   },
 
+  importCSV: {
+    btn: 'Import CSV',
+    title: (what) => `Import ${what}`,
+    dropzone: 'Drag and drop a CSV file here, or click to select',
+    format: 'Expected columns:',
+    submit: 'Import',
+    importing: 'Importing...',
+    resultImported: (n) => `${n} record${n !== 1 ? 's' : ''} imported`,
+    resultSkipped: (n) => `${n} record${n !== 1 ? 's' : ''} skipped`,
+    rowError: (row, err) => `Row ${row}: ${err}`,
+    done: 'Done',
+  },
+
   users: {
     title: 'Users',
     count: (n) => `${n} user${n !== 1 ? 's' : ''}`,

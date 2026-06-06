@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { Plus, Pencil, Trash2, Layers } from 'lucide-react'
-import { getVLANs, createVLAN, updateVLAN, deleteVLAN } from '../api/client'
+import { Plus, Pencil, Trash2, Layers, Upload } from 'lucide-react'
+import { getVLANs, createVLAN, updateVLAN, deleteVLAN, importVLANs } from '../api/client'
 import type { VLAN, Status } from '../types'
 import { Modal } from '../components/Modal'
+import { ImportModal } from '../components/ImportModal'
 import { StatusBadge } from '../components/StatusBadge'
 import { ExportMenu } from '../components/ExportMenu'
 import { exportVLANs } from '../utils/export'
@@ -21,6 +22,7 @@ export function VLANs() {
   const [form, setForm] = useState<FormData>(emptyForm)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const [showImport, setShowImport] = useState(false)
 
   const load = useCallback(async () => { setVlans(await getVLANs()) }, [])
   useEffect(() => { load() }, [load])
@@ -60,9 +62,18 @@ export function VLANs() {
         <div className="flex items-center gap-2">
           <ExportMenu onExport={fmt => exportVLANs(vlans, fmt)} disabled={vlans.length === 0} />
           {isAdmin && (
-            <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
-              <Plus size={14} /> {t.common.add}
-            </button>
+            <>
+              <button
+                onClick={() => setShowImport(true)}
+                className="btn-ghost flex items-center gap-1.5"
+                style={{ fontSize: '13px' }}
+              >
+                <Upload size={13} /> {t.importCSV.btn}
+              </button>
+              <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
+                <Plus size={14} /> {t.common.add}
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -134,6 +145,16 @@ export function VLANs() {
           </tbody>
         </table>
       </div>
+
+      {showImport && (
+        <ImportModal
+          what={t.vlans.title}
+          formatHint="vid, name, description, status"
+          onImport={importVLANs}
+          onDone={load}
+          onClose={() => setShowImport(false)}
+        />
+      )}
 
       {showModal && (
         <Modal title={editing ? t.vlans.modalEdit : t.vlans.modalCreate} onClose={() => setShowModal(false)}>
