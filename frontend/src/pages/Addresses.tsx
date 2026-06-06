@@ -107,6 +107,7 @@ export function Addresses() {
           className="ctrl" style={{ width: 'auto' }}>
           <option value="">{t.status.all}</option>
           <option value="active">{t.status.active}</option>
+          <option value="pending">{t.status.pending}</option>
           <option value="reserved">{t.status.reserved}</option>
           <option value="deprecated">{t.status.deprecated}</option>
         </select>
@@ -208,6 +209,7 @@ export function Addresses() {
                 <label className="lbl">Status</label>
                 <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as Status }))} className="ctrl">
                   <option value="active">{t.status.active}</option>
+                  <option value="pending">{t.status.pending}</option>
                   <option value="reserved">{t.status.reserved}</option>
                   <option value="deprecated">{t.status.deprecated}</option>
                 </select>

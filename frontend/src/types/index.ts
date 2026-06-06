@@ -35,6 +35,7 @@ export interface Prefix {
   utilization: number
   total_ips: number
   used_ips: number
+  pending_ips: number
   children?: Prefix[]
   addresses?: IPAddress[]
   vlan?: VLAN

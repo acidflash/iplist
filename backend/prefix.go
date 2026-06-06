@@ -147,6 +147,7 @@ func (r *PrefixRepo) List() ([]Prefix, error) {
 		if prefixes[i].TotalIPs > 0 {
 			prefixes[i].Utilization = float64(prefixes[i].UsedIPs) / float64(prefixes[i].TotalIPs) * 100
 		}
+		r.db.QueryRow("SELECT COUNT(*) FROM ip_addresses WHERE prefix_id = ? AND status = 'pending'", prefixes[i].ID).Scan(&prefixes[i].PendingIPs)
 	}
 
 	if prefixes == nil {
@@ -181,6 +182,7 @@ func (r *PrefixRepo) GetByID(id int64) (*Prefix, error) {
 	if p.TotalIPs > 0 {
 		p.Utilization = float64(p.UsedIPs) / float64(p.TotalIPs) * 100
 	}
+	r.db.QueryRow("SELECT COUNT(*) FROM ip_addresses WHERE prefix_id = ? AND status = 'pending'", p.ID).Scan(&p.PendingIPs)
 	p.NetInfo = computeNetworkInfo(p.Prefix)
 
 	// Load direct children

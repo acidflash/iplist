@@ -37,6 +37,7 @@ type Prefix struct {
 	Utilization float64      `json:"utilization"`
 	TotalIPs    int64        `json:"total_ips"`
 	UsedIPs     int64        `json:"used_ips"`
+	PendingIPs  int64        `json:"pending_ips"`
 	Children    []Prefix     `json:"children,omitempty"`
 	Addresses   []IPAddress  `json:"addresses,omitempty"`
 	Vlan        *VLAN        `json:"vlan,omitempty"`

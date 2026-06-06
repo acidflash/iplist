@@ -82,6 +82,17 @@ function PrefixRow({
             >
               {prefix.prefix}
             </Link>
+            {prefix.pending_ips > 0 && (
+              <Link
+                to={`/prefixes/${prefix.id}`}
+                onClick={e => e.stopPropagation()}
+                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5"
+                style={{ fontSize: '11px', fontWeight: 600, background: 'oklch(75% 0.145 76 / 0.15)', border: '1px solid oklch(75% 0.145 76 / 0.35)', color: 'var(--c-warning)', textDecoration: 'none' }}
+              >
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--c-warning)', display: 'inline-block' }} />
+                {prefix.pending_ips}
+              </Link>
+            )}
           </div>
         </td>
         <td className="px-4 py-2">
