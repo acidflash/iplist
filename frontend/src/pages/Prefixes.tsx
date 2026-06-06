@@ -9,6 +9,7 @@ import { StatusBadge } from '../components/StatusBadge'
 import { useAuth } from '../context/AuthContext'
 import { ExportMenu } from '../components/ExportMenu'
 import { exportPrefixes } from '../utils/export'
+import { useT } from '../i18n'
 
 interface FormData {
   prefix: string; name: string; description: string
@@ -48,7 +49,6 @@ function PrefixRow({
       >
         <td className="px-4 py-2">
           <div className="flex items-center" style={{ paddingLeft: `${depth * 18}px` }}>
-            {/* Tree guide */}
             {depth > 0 && (
               <div
                 className="w-3 h-px flex-shrink-0 mr-1"
@@ -107,9 +107,7 @@ function PrefixRow({
           </span>
         </td>
         <td className="px-3 py-2">
-          <div
-            className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-          >
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
             {isAdmin && <ActionBtn onClick={() => onEdit(prefix)} accent>
               <Pencil size={13} />
             </ActionBtn>}
@@ -153,6 +151,7 @@ function ActionBtn({ onClick, accent, children }: {
 
 export function Prefixes() {
   const { isAdmin } = useAuth()
+  const { t } = useT()
   const [prefixes, setPrefixes] = useState<Prefix[]>([])
   const [vlans, setVlans] = useState<VLAN[]>([])
   const [showModal, setShowModal] = useState(false)
@@ -178,7 +177,7 @@ export function Prefixes() {
     setError(''); setShowModal(true)
   }
   const handleDelete = async (p: Prefix) => {
-    if (!confirm(`Ta bort ${p.prefix}?`)) return
+    if (!confirm(t.prefixes.confirmDelete(p.prefix))) return
     await deletePrefix(p.id); load()
   }
   const handleSubmit = async (e: React.FormEvent) => {
@@ -192,7 +191,7 @@ export function Prefixes() {
       editing ? await updatePrefix(editing.id, payload) : await createPrefix(payload)
       setShowModal(false); load()
     } catch (err: unknown) {
-      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Något gick fel')
+      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || t.common.somethingWentWrong)
     }
   }
 
@@ -205,16 +204,16 @@ export function Prefixes() {
     <div className="p-6 max-w-7xl">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-base font-semibold text-c-text">Prefix</h1>
+          <h1 className="text-base font-semibold text-c-text">{t.prefixes.title}</h1>
           <p className="text-c-text3 mt-0.5" style={{ fontSize: '12px' }}>
-            {prefixes.length} prefix
+            {t.prefixes.count(prefixes.length)}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <ExportMenu onExport={fmt => exportPrefixes(prefixes, fmt)} disabled={prefixes.length === 0} />
           {isAdmin && (
             <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
-              <Plus size={14} /> Lägg till
+              <Plus size={14} /> {t.common.add}
             </button>
           )}
         </div>
@@ -223,7 +222,7 @@ export function Prefixes() {
       <div className="mb-4">
         <input
           type="text"
-          placeholder="Sök prefix eller namn…"
+          placeholder={t.prefixes.searchPlaceholder}
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="ctrl"
@@ -238,7 +237,7 @@ export function Prefixes() {
         <table className="w-full border-collapse">
           <thead>
             <tr style={{ background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)' }}>
-              {['Prefix', 'Namn', 'VLAN', 'Status', 'Utnyttjande', 'IPs', ''].map(h => (
+              {['Prefix', t.prefixes.colName, 'VLAN', 'Status', t.prefixes.colUtil, t.prefixes.colIPs, ''].map(h => (
                 <th
                   key={h}
                   className="px-4 py-2.5 text-left font-medium"
@@ -255,7 +254,7 @@ export function Prefixes() {
                 <td colSpan={7} className="py-14 text-center">
                   <Network size={28} style={{ color: 'var(--c-border)', margin: '0 auto 8px' }} />
                   <p className="text-c-text3" style={{ fontSize: '14px' }}>
-                    {search ? 'Inga prefix matchar sökningen' : 'Lägg till ditt första prefix'}
+                    {search ? t.prefixes.emptySearch : t.prefixes.emptyAll}
                   </p>
                 </td>
               </tr>
@@ -271,10 +270,10 @@ export function Prefixes() {
       </div>
 
       {showModal && (
-        <Modal title={editing ? 'Redigera prefix' : 'Nytt prefix'} onClose={() => setShowModal(false)}>
+        <Modal title={editing ? t.prefixes.modalEdit : t.prefixes.modalCreate} onClose={() => setShowModal(false)}>
           <form onSubmit={handleSubmit} className="space-y-3.5">
             <div>
-              <label className="lbl">CIDR *</label>
+              <label className="lbl">{t.prefixes.cidr} *</label>
               <input required type="text" placeholder="10.0.0.0/24 eller 2001:db8::/32"
                 value={form.prefix} onChange={e => setForm(f => ({ ...f, prefix: e.target.value }))}
                 className="ctrl mono" />
@@ -296,9 +295,9 @@ export function Prefixes() {
                 <label className="lbl">Status</label>
                 <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as Status }))}
                   className="ctrl">
-                  <option value="active">Active</option>
-                  <option value="reserved">Reserved</option>
-                  <option value="deprecated">Deprecated</option>
+                  <option value="active">{t.status.active}</option>
+                  <option value="reserved">{t.status.reserved}</option>
+                  <option value="deprecated">{t.status.deprecated}</option>
                 </select>
               </div>
               <div>
@@ -312,12 +311,12 @@ export function Prefixes() {
             </div>
             <div>
               <label className="lbl">
-                Föräldra-prefix{' '}
-                <span style={{ color: 'var(--c-text-3)', fontWeight: 400 }}>(auto om tomt)</span>
+                {t.prefixes.parentPrefix}{' '}
+                <span style={{ color: 'var(--c-text-3)', fontWeight: 400 }}>({t.prefixes.parentAuto})</span>
               </label>
               <select value={form.parent_id} onChange={e => setForm(f => ({ ...f, parent_id: e.target.value }))}
                 className="ctrl">
-                <option value="">– Auto –</option>
+                <option value="">– {t.common.auto} –</option>
                 {prefixes.filter(p => p.id !== editing?.id).map(p => (
                   <option key={p.id} value={p.id}>{p.prefix}{p.name ? ` · ${p.name}` : ''}</option>
                 ))}
@@ -332,8 +331,8 @@ export function Prefixes() {
               </p>
             )}
             <div className="flex justify-end gap-2 pt-1">
-              <button type="button" onClick={() => setShowModal(false)} className="btn-ghost">Avbryt</button>
-              <button type="submit" className="btn-primary">{editing ? 'Spara' : 'Skapa'}</button>
+              <button type="button" onClick={() => setShowModal(false)} className="btn-ghost">{t.common.cancel}</button>
+              <button type="submit" className="btn-primary">{editing ? t.common.save : t.common.create}</button>
             </div>
           </form>
         </Modal>

@@ -3,12 +3,14 @@ import { Plus, Pencil, Trash2, Users as UsersIcon, ShieldCheck, Eye } from 'luci
 import { getUsers, createUser, updateUser, deleteUser, type UserData } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import { Modal } from '../components/Modal'
+import { useT } from '../i18n'
 
 interface CreateForm { username: string; password: string; role: string }
 interface EditForm { password: string; role: string }
 
 export function Users() {
   const { auth } = useAuth()
+  const { t } = useT()
   const [users, setUsers] = useState<UserData[]>([])
   const [showCreate, setShowCreate] = useState(false)
   const [editing, setEditing] = useState<UserData | null>(null)
@@ -22,15 +24,15 @@ export function Users() {
   const openCreate = () => { setCreateForm({ username: '', password: '', role: 'read' }); setError(''); setShowCreate(true) }
   const openEdit = (u: UserData) => { setEditing(u); setEditForm({ password: '', role: u.role }); setError('') }
   const handleDelete = async (u: UserData) => {
-    if (!confirm(`Ta bort användare ${u.username}?`)) return
+    if (!confirm(t.users.confirmDelete(u.username))) return
     try { await deleteUser(u.id); load() } catch (e: unknown) {
-      alert((e as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Kunde inte ta bort')
+      alert((e as { response?: { data?: { error?: string } } })?.response?.data?.error || t.users.deleteError)
     }
   }
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault(); setError('')
     try { await createUser(createForm); setShowCreate(false); load() } catch (err: unknown) {
-      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Något gick fel')
+      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || t.common.somethingWentWrong)
     }
   }
   const handleEdit = async (e: React.FormEvent) => {
@@ -38,7 +40,7 @@ export function Users() {
     const payload: { password?: string; role?: string } = { role: editForm.role }
     if (editForm.password) payload.password = editForm.password
     try { await updateUser(editing!.id, payload); setEditing(null); load() } catch (err: unknown) {
-      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Något gick fel')
+      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || t.common.somethingWentWrong)
     }
   }
 
@@ -46,11 +48,11 @@ export function Users() {
     <div className="p-6 max-w-3xl">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-base font-semibold text-c-text">Användare</h1>
-          <p className="text-c-text3 mt-0.5" style={{ fontSize: '13px' }}>{users.length} användare</p>
+          <h1 className="text-base font-semibold text-c-text">{t.users.title}</h1>
+          <p className="text-c-text3 mt-0.5" style={{ fontSize: '13px' }}>{t.users.count(users.length)}</p>
         </div>
         <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
-          <Plus size={14} /> Lägg till
+          <Plus size={14} /> {t.common.add}
         </button>
       </div>
 
@@ -58,7 +60,7 @@ export function Users() {
         <table className="w-full border-collapse">
           <thead>
             <tr style={{ background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)' }}>
-              {['Användare', 'Roll', 'Skapad', ''].map(h => (
+              {[t.users.colUser, t.users.colRole, t.users.colCreated, ''].map(h => (
                 <th key={h} className="px-4 py-2.5 text-left font-medium"
                   style={{ fontSize: '12px', color: 'var(--c-text-3)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                   {h}
@@ -71,7 +73,7 @@ export function Users() {
               <tr>
                 <td colSpan={4} className="py-14 text-center">
                   <UsersIcon size={28} style={{ color: 'var(--c-border)', margin: '0 auto 8px' }} />
-                  <p style={{ fontSize: '14px', color: 'var(--c-text-3)' }}>Inga användare</p>
+                  <p style={{ fontSize: '14px', color: 'var(--c-text-3)' }}>{t.users.noUsers}</p>
                 </td>
               </tr>
             )}
@@ -90,17 +92,17 @@ export function Users() {
                       <span style={{ fontSize: '14px', color: 'var(--c-text)', fontWeight: 500 }}>{u.username}</span>
                       {u.username === auth?.username && (
                         <span className="ml-2 rounded px-1.5 py-0.5" style={{ fontSize: '11px', background: 'oklch(62% 0.20 258 / 0.12)', color: 'var(--c-accent)' }}>
-                          du
+                          {t.common.you}
                         </span>
                       )}
                     </div>
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <RoleBadge role={u.role} />
+                  <RoleBadge role={u.role} adminLabel={t.users.roleAdmin} readerLabel={t.users.roleReader} />
                 </td>
                 <td className="px-4 py-3" style={{ fontSize: '13px', color: 'var(--c-text-3)' }}>
-                  {new Date(u.created_at).toLocaleDateString('sv-SE')}
+                  {new Date(u.created_at).toLocaleDateString(t.dateLocale)}
                 </td>
                 <td className="px-3 py-3">
                   <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -116,33 +118,35 @@ export function Users() {
 
       {/* Create modal */}
       {showCreate && (
-        <Modal title="Ny användare" onClose={() => setShowCreate(false)}>
+        <Modal title={t.users.modalCreate} onClose={() => setShowCreate(false)}>
           <form onSubmit={handleCreate} className="space-y-3.5">
             <div>
-              <label className="lbl">Användarnamn *</label>
+              <label className="lbl">{t.users.username} *</label>
               <input required type="text" value={createForm.username}
                 onChange={e => setCreateForm(f => ({ ...f, username: e.target.value }))}
                 className="ctrl" placeholder="johndoe" />
             </div>
             <div>
-              <label className="lbl">Lösenord *</label>
+              <label className="lbl">{t.users.password} *</label>
               <input required type="password" value={createForm.password}
                 onChange={e => setCreateForm(f => ({ ...f, password: e.target.value }))}
                 className="ctrl" />
             </div>
             <div>
-              <label className="lbl">Roll</label>
+              <label className="lbl">{t.users.role}</label>
               <div className="flex gap-3 mt-1">
-                <RoleOption value="admin" current={createForm.role} label="Administratör" desc="Full åtkomst"
+                <RoleOption value="admin" current={createForm.role}
+                  label={t.users.roleAdmin} desc={t.users.roleAdminDesc}
                   icon={ShieldCheck} onChange={r => setCreateForm(f => ({ ...f, role: r }))} />
-                <RoleOption value="read" current={createForm.role} label="Läsare" desc="Kan bara läsa"
+                <RoleOption value="read" current={createForm.role}
+                  label={t.users.roleReader} desc={t.users.roleReaderDesc}
                   icon={Eye} onChange={r => setCreateForm(f => ({ ...f, role: r }))} />
               </div>
             </div>
             {error && <ErrorMsg msg={error} />}
             <div className="flex justify-end gap-2 pt-1">
-              <button type="button" onClick={() => setShowCreate(false)} className="btn-ghost">Avbryt</button>
-              <button type="submit" className="btn-primary">Skapa</button>
+              <button type="button" onClick={() => setShowCreate(false)} className="btn-ghost">{t.common.cancel}</button>
+              <button type="submit" className="btn-primary">{t.common.create}</button>
             </div>
           </form>
         </Modal>
@@ -150,27 +154,29 @@ export function Users() {
 
       {/* Edit modal */}
       {editing && (
-        <Modal title={`Redigera ${editing.username}`} onClose={() => setEditing(null)}>
+        <Modal title={t.users.modalEdit(editing.username)} onClose={() => setEditing(null)}>
           <form onSubmit={handleEdit} className="space-y-3.5">
             <div>
-              <label className="lbl">Nytt lösenord <span style={{ color: 'var(--c-text-3)', fontWeight: 400 }}>(lämna tomt för att behålla)</span></label>
+              <label className="lbl">{t.users.newPassword} <span style={{ color: 'var(--c-text-3)', fontWeight: 400 }}>({t.users.keepPassword})</span></label>
               <input type="password" value={editForm.password}
                 onChange={e => setEditForm(f => ({ ...f, password: e.target.value }))}
                 className="ctrl" />
             </div>
             <div>
-              <label className="lbl">Roll</label>
+              <label className="lbl">{t.users.role}</label>
               <div className="flex gap-3 mt-1">
-                <RoleOption value="admin" current={editForm.role} label="Administratör" desc="Full åtkomst"
+                <RoleOption value="admin" current={editForm.role}
+                  label={t.users.roleAdmin} desc={t.users.roleAdminDesc}
                   icon={ShieldCheck} onChange={r => setEditForm(f => ({ ...f, role: r }))} />
-                <RoleOption value="read" current={editForm.role} label="Läsare" desc="Kan bara läsa"
+                <RoleOption value="read" current={editForm.role}
+                  label={t.users.roleReader} desc={t.users.roleReaderDesc}
                   icon={Eye} onChange={r => setEditForm(f => ({ ...f, role: r }))} />
               </div>
             </div>
             {error && <ErrorMsg msg={error} />}
             <div className="flex justify-end gap-2 pt-1">
-              <button type="button" onClick={() => setEditing(null)} className="btn-ghost">Avbryt</button>
-              <button type="submit" className="btn-primary">Spara</button>
+              <button type="button" onClick={() => setEditing(null)} className="btn-ghost">{t.common.cancel}</button>
+              <button type="submit" className="btn-primary">{t.common.save}</button>
             </div>
           </form>
         </Modal>
@@ -179,7 +185,7 @@ export function Users() {
   )
 }
 
-function RoleBadge({ role }: { role: string }) {
+function RoleBadge({ role, adminLabel, readerLabel }: { role: string; adminLabel: string; readerLabel: string }) {
   const isAdmin = role === 'admin'
   return (
     <span className="inline-flex items-center gap-1.5 rounded px-2 py-0.5"
@@ -190,7 +196,7 @@ function RoleBadge({ role }: { role: string }) {
         color: isAdmin ? 'var(--c-accent)' : 'var(--c-success)',
       }}>
       {isAdmin ? <ShieldCheck size={11} /> : <Eye size={11} />}
-      {isAdmin ? 'Admin' : 'Läsare'}
+      {isAdmin ? adminLabel : readerLabel}
     </span>
   )
 }

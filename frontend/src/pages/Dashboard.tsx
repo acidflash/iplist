@@ -5,8 +5,10 @@ import { getStats, getPrefixes } from '../api/client'
 import type { Stats, Prefix } from '../types'
 import { UtilizationBar } from '../components/UtilizationBar'
 import { StatusBadge } from '../components/StatusBadge'
+import { useT } from '../i18n'
 
 export function Dashboard() {
+  const { t } = useT()
   const [stats, setStats] = useState<Stats | null>(null)
   const [prefixes, setPrefixes] = useState<Prefix[]>([])
 
@@ -28,7 +30,7 @@ export function Dashboard() {
     <div className="p-6 max-w-5xl">
       {/* Page header */}
       <div className="mb-6">
-        <h1 className="text-base font-semibold text-c-text">Översikt</h1>
+        <h1 className="text-base font-semibold text-c-text">{t.dashboard.title}</h1>
       </div>
 
       {/* Inline stat row — no hero-metric */}
@@ -36,14 +38,14 @@ export function Dashboard() {
         className="flex items-center gap-6 px-4 py-3 rounded-lg mb-6 text-[14px]"
         style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border-sub)' }}
       >
-        <Stat icon={Network} label="Prefix" value={stats?.total_prefixes} to="/prefixes" />
+        <Stat icon={Network} label={t.nav.prefixes} value={stats?.total_prefixes} to="/prefixes" />
         <Divider />
-        <Stat icon={Layers} label="VLAN" value={stats?.total_vlans} to="/vlans" />
+        <Stat icon={Layers} label={t.nav.vlans} value={stats?.total_vlans} to="/vlans" />
         <Divider />
-        <Stat icon={Server} label="IP-adresser" value={stats?.total_addresses} to="/addresses" />
+        <Stat icon={Server} label={t.dashboard.ipAddresses} value={stats?.total_addresses} to="/addresses" />
         <Divider />
         <div className="flex items-center gap-2 text-c-text2">
-          <span>Utnyttjande</span>
+          <span>{t.dashboard.utilization}</span>
           <span className="font-semibold text-c-text tabular-nums">
             {stats ? `${stats.utilization.toFixed(1)}%` : '–'}
           </span>
@@ -57,8 +59,8 @@ export function Dashboard() {
       <div className="grid grid-cols-2 gap-4">
         {/* High utilization */}
         <Panel
-          title="Hög utnyttjandegrad"
-          emptyText="Inga prefix över 80%"
+          title={t.dashboard.highUtil}
+          emptyText={t.dashboard.noHighUtil}
           isEmpty={highUtil.length === 0}
         >
           {highUtil.map(p => (
@@ -70,15 +72,15 @@ export function Dashboard() {
               className="flex items-center gap-1 text-c-text3 hover:text-c-text2 transition-colors mt-3"
               style={{ fontSize: '13px' }}
             >
-              Visa alla prefix <ArrowRight size={11} />
+              {t.dashboard.viewAll} <ArrowRight size={11} />
             </Link>
           )}
         </Panel>
 
         {/* Recent */}
         <Panel
-          title="Senast tillagda"
-          emptyText="Inga prefix ännu"
+          title={t.dashboard.recent}
+          emptyText={t.dashboard.noRecent}
           isEmpty={recent.length === 0}
         >
           {recent.map(p => (
@@ -102,7 +104,7 @@ export function Dashboard() {
               className="flex items-center gap-1 text-c-text3 hover:text-c-text2 transition-colors mt-3"
               style={{ fontSize: '13px' }}
             >
-              Visa alla <ArrowRight size={11} />
+              {t.dashboard.viewAll} <ArrowRight size={11} />
             </Link>
           )}
         </Panel>

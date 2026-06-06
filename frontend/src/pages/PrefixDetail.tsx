@@ -7,6 +7,7 @@ import { Modal } from '../components/Modal'
 import { StatusBadge } from '../components/StatusBadge'
 import { UtilizationBar } from '../components/UtilizationBar'
 import { useAuth } from '../context/AuthContext'
+import { useT } from '../i18n'
 
 interface AddrForm {
   address: string; hostname: string; dns_name: string
@@ -18,6 +19,7 @@ export function PrefixDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { isAdmin } = useAuth()
+  const { t } = useT()
   const [prefix, setPrefix] = useState<Prefix | null>(null)
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState<IPAddress | null>(null)
@@ -52,7 +54,7 @@ export function PrefixDetail() {
     setError(''); setShowModal(true)
   }
   const handleDelete = async (a: IPAddress) => {
-    if (!confirm(`Ta bort ${a.address}?`)) return
+    if (!confirm(t.prefixDetail.confirmDeleteAddr(a.address))) return
     await deleteAddress(a.id); load()
   }
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,7 +64,7 @@ export function PrefixDetail() {
       editing ? await updateAddress(editing.id, payload) : await createAddress(payload)
       setShowModal(false); load()
     } catch (err: unknown) {
-      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Något gick fel')
+      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || t.common.somethingWentWrong)
     }
   }
 
@@ -82,7 +84,7 @@ export function PrefixDetail() {
           className="flex items-center gap-1.5 hover:text-c-text transition-colors"
           style={{ color: 'var(--c-text-3)' }}
         >
-          <ArrowLeft size={14} /> Prefix
+          <ArrowLeft size={14} /> {t.prefixDetail.backTo}
         </button>
         <ChevronRight size={12} />
         <code className="font-ip" style={{ color: 'var(--c-accent)', fontSize: '13px' }}>{prefix.prefix}</code>
@@ -149,13 +151,13 @@ export function PrefixDetail() {
       {children.length > 0 && (
         <section className="mb-5">
           <h2 className="font-medium mb-2" style={{ fontSize: '13px', color: 'var(--c-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Underprefix
+            {t.prefixDetail.childPrefixes}
           </h2>
           <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--c-border-sub)' }}>
             <table className="w-full border-collapse">
               <thead>
                 <tr style={{ background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)' }}>
-                  {['Prefix', 'Namn', 'VLAN', 'Status', 'Utnyttjande'].map(h => (
+                  {['Prefix', 'Namn', 'VLAN', 'Status', t.prefixes.colUtil].map(h => (
                     <th key={h} className="px-4 py-2.5 text-left font-medium"
                       style={{ fontSize: '12px', color: 'var(--c-text-3)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                       {h}
@@ -198,11 +200,11 @@ export function PrefixDetail() {
       <section>
         <div className="flex items-center justify-between mb-2">
           <h2 className="font-medium" style={{ fontSize: '13px', color: 'var(--c-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            IP-adresser <span style={{ color: 'var(--c-text-3)', fontWeight: 400, marginLeft: 6 }}>{addresses.length}</span>
+            {t.prefixDetail.addresses} <span style={{ color: 'var(--c-text-3)', fontWeight: 400, marginLeft: 6 }}>{addresses.length}</span>
           </h2>
           {isAdmin && (
             <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
-              <Plus size={14} /> Lägg till IP
+              <Plus size={14} /> {t.prefixDetail.addAddress}
             </button>
           )}
         </div>
@@ -211,7 +213,7 @@ export function PrefixDetail() {
           <table className="w-full border-collapse">
             <thead>
               <tr style={{ background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)' }}>
-                {['IP-adress', 'Hostname', 'DNS', 'Beskrivning', 'Status', ''].map(h => (
+                {[t.prefixDetail.ipAddress, t.prefixDetail.hostname, t.prefixDetail.dnsName, 'Beskrivning', 'Status', ''].map(h => (
                   <th key={h} className="px-4 py-2.5 text-left font-medium"
                     style={{ fontSize: '12px', color: 'var(--c-text-3)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                     {h}
@@ -224,7 +226,7 @@ export function PrefixDetail() {
                 <tr>
                   <td colSpan={6} className="py-12 text-center">
                     <Server size={26} style={{ color: 'var(--c-border)', margin: '0 auto 8px' }} />
-                    <p style={{ fontSize: '14px', color: 'var(--c-text-3)' }}>Inga IP-adresser i detta prefix</p>
+                    <p style={{ fontSize: '14px', color: 'var(--c-text-3)' }}>{t.prefixDetail.noAddresses}</p>
                   </td>
                 </tr>
               )}
@@ -262,23 +264,23 @@ export function PrefixDetail() {
       </section>
 
       {showModal && (
-        <Modal title={editing ? 'Redigera IP-adress' : `Lägg till i ${prefix.prefix}`} onClose={() => setShowModal(false)}>
+        <Modal title={editing ? t.prefixDetail.modalEditAddr : t.prefixDetail.modalCreateAddr(prefix.prefix)} onClose={() => setShowModal(false)}>
           <form onSubmit={handleSubmit} className="space-y-3.5">
             <div>
-              <label className="lbl">IP-adress *</label>
+              <label className="lbl">{t.prefixDetail.ipAddress} *</label>
               <input required type="text" placeholder="192.168.1.10 eller 2001:db8::1"
                 value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
                 className="ctrl mono" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="lbl">Hostname</label>
+                <label className="lbl">{t.prefixDetail.hostname}</label>
                 <input type="text" placeholder="server01"
                   value={form.hostname} onChange={e => setForm(f => ({ ...f, hostname: e.target.value }))}
                   className="ctrl" />
               </div>
               <div>
-                <label className="lbl">DNS-namn</label>
+                <label className="lbl">{t.prefixDetail.dnsName}</label>
                 <input type="text" placeholder="server01.example.com"
                   value={form.dns_name} onChange={e => setForm(f => ({ ...f, dns_name: e.target.value }))}
                   className="ctrl mono" />
@@ -294,9 +296,9 @@ export function PrefixDetail() {
               <label className="lbl">Status</label>
               <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as Status }))}
                 className="ctrl">
-                <option value="active">Active</option>
-                <option value="reserved">Reserved</option>
-                <option value="deprecated">Deprecated</option>
+                <option value="active">{t.status.active}</option>
+                <option value="reserved">{t.status.reserved}</option>
+                <option value="deprecated">{t.status.deprecated}</option>
               </select>
             </div>
             {error && (
@@ -305,8 +307,8 @@ export function PrefixDetail() {
               </p>
             )}
             <div className="flex justify-end gap-2 pt-1">
-              <button type="button" onClick={() => setShowModal(false)} className="btn-ghost">Avbryt</button>
-              <button type="submit" className="btn-primary">{editing ? 'Spara' : 'Lägg till'}</button>
+              <button type="button" onClick={() => setShowModal(false)} className="btn-ghost">{t.common.cancel}</button>
+              <button type="submit" className="btn-primary">{editing ? t.common.save : t.common.add}</button>
             </div>
           </form>
         </Modal>
@@ -334,7 +336,6 @@ function CopyField({ label, value }: { label: string; value: string }) {
           onClick={copy}
           className="opacity-0 group-hover/cf:opacity-100 transition-opacity rounded p-0.5"
           style={{ color: copied ? 'oklch(65% 0.18 145)' : 'var(--c-text-3)' }}
-          title="Kopiera"
         >
           {copied ? <Check size={11} /> : <Copy size={11} />}
         </button>
@@ -344,14 +345,13 @@ function CopyField({ label, value }: { label: string; value: string }) {
 }
 
 function NetworkInfoPanel({ info, cidr }: { info: NetworkInfo; cidr: string }) {
+  const { t } = useT()
   const isIPv4 = info.version === 4
   const prefixLen = parseInt(cidr.split('/')[1])
   const hostBits = (isIPv4 ? 32 : 128) - prefixLen
 
   const formatTotal = (s: string) => {
-    // For small numbers (≤ 2^53), use locale formatting
-    if (s.length <= 15) return parseInt(s).toLocaleString('sv-SE')
-    // For large IPv6 counts, show as 2^N
+    if (s.length <= 15) return parseInt(s).toLocaleString(t.dateLocale)
     return `2^${hostBits}`
   }
 
@@ -361,7 +361,7 @@ function NetworkInfoPanel({ info, cidr }: { info: NetworkInfo; cidr: string }) {
         className="font-medium mb-2"
         style={{ fontSize: '13px', color: 'var(--c-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
       >
-        Nätverksinformation
+        {t.prefixDetail.netInfo}
       </h2>
       <div
         className="rounded-lg px-5 py-4"
@@ -369,15 +369,15 @@ function NetworkInfoPanel({ info, cidr }: { info: NetworkInfo; cidr: string }) {
       >
         {isIPv4 ? (
           <div className="grid gap-x-10 gap-y-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
-            <CopyField label="Nätverksadress" value={info.network} />
-            <CopyField label="Broadcast" value={info.broadcast!} />
-            <CopyField label="Nätmask" value={info.netmask!} />
-            <CopyField label="Wildcard-mask" value={info.wildcard!} />
-            <CopyField label="Första host" value={info.first_host} />
-            <CopyField label="Sista host" value={info.last_host} />
+            <CopyField label={t.prefixDetail.networkAddr} value={info.network} />
+            <CopyField label={t.prefixDetail.broadcast} value={info.broadcast!} />
+            <CopyField label={t.prefixDetail.netmask} value={info.netmask!} />
+            <CopyField label={t.prefixDetail.wildcard} value={info.wildcard!} />
+            <CopyField label={t.prefixDetail.firstHost} value={info.first_host} />
+            <CopyField label={t.prefixDetail.lastHost} value={info.last_host} />
             <div className="flex flex-col gap-0.5">
               <span style={{ fontSize: '11px', color: 'var(--c-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Användbara hostar
+                {t.prefixDetail.usableHosts}
               </span>
               <span className="font-ip tabular-nums" style={{ fontSize: '13px', color: 'var(--c-text)' }}>
                 {formatTotal(info.total_hosts)}
@@ -386,11 +386,11 @@ function NetworkInfoPanel({ info, cidr }: { info: NetworkInfo; cidr: string }) {
           </div>
         ) : (
           <div className="grid gap-x-10 gap-y-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
-            <CopyField label="Första adress" value={info.first_host} />
-            <CopyField label="Sista adress" value={info.last_host} />
+            <CopyField label={t.prefixDetail.firstAddr} value={info.first_host} />
+            <CopyField label={t.prefixDetail.lastAddr} value={info.last_host} />
             <div className="flex flex-col gap-0.5">
               <span style={{ fontSize: '11px', color: 'var(--c-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                Totalt antal adresser
+                {t.prefixDetail.totalAddrs}
               </span>
               <span className="font-ip" style={{ fontSize: '13px', color: 'var(--c-text)' }}>
                 {formatTotal(info.total_hosts)}
@@ -419,6 +419,7 @@ function SubnetCalculator({
   isAdmin: boolean
   onCreated: () => void
 }) {
+  const { t } = useT()
   const [creating, setCreating] = useState<string | null>(null)
   const [createForm, setCreateForm] = useState<CreateSubnetForm>(emptyCreateForm)
   const [createError, setCreateError] = useState('')
@@ -449,7 +450,7 @@ function SubnetCalculator({
       setCreating(null)
       onCreated()
     } catch (err: unknown) {
-      setCreateError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Något gick fel')
+      setCreateError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || t.common.somethingWentWrong)
     }
   }
 
@@ -471,7 +472,7 @@ function SubnetCalculator({
         className="font-medium mb-2"
         style={{ fontSize: '13px', color: 'var(--c-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
       >
-        Subnätskalkylator
+        {t.prefixDetail.calculator}
       </h2>
       <div
         className="rounded-lg p-4"
@@ -481,7 +482,7 @@ function SubnetCalculator({
           <code className="font-ip" style={{ fontSize: '13.5px', color: 'var(--c-accent)' }}>{prefix.prefix}</code>
           <ChevronsRight size={14} style={{ color: 'var(--c-text-3)' }} />
           <div className="flex items-center gap-2">
-            <label style={{ fontSize: '13px', color: 'var(--c-text-2)' }}>Dela upp i</label>
+            <label style={{ fontSize: '13px', color: 'var(--c-text-2)' }}>{t.prefixDetail.splitInto}</label>
             <select
               value={effectiveSplitLen}
               onChange={e => onSplitLenChange(parseInt(e.target.value))}
@@ -497,28 +498,28 @@ function SubnetCalculator({
               className="btn-primary"
               style={{ fontSize: '12px', padding: '4px 12px' }}
             >
-              Beräkna
+              {t.prefixDetail.calculate}
             </button>
           )}
         </div>
 
         {splitLoading && (
-          <p style={{ fontSize: '13px', color: 'var(--c-text-3)' }}>Beräknar…</p>
+          <p style={{ fontSize: '13px', color: 'var(--c-text-3)' }}>{t.prefixDetail.calculating}</p>
         )}
 
         {splitResult && !splitLoading && (
           <>
             <p style={{ fontSize: '12px', color: 'var(--c-text-3)', marginBottom: '10px' }}>
               {splitResult.truncated
-                ? `Visar ${splitResult.subnets.length} av ${splitResult.total_count} subnät`
-                : `${splitResult.total_count} subnät`}
-              {' · '}{splitResult.subnets[0]?.hosts} värdar per subnät
+                ? t.prefixDetail.subnetsShowing(splitResult.subnets.length, splitResult.total_count)
+                : t.prefixDetail.subnetsCount(splitResult.total_count)}
+              {' · '}{t.prefixDetail.hostsPerSubnet(splitResult.subnets[0]?.hosts ?? '0')}
             </p>
             <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--c-border-sub)' }}>
               <table className="w-full border-collapse">
                 <thead>
                   <tr style={{ background: 'var(--c-base)', borderBottom: '1px solid var(--c-border)' }}>
-                    {['Subnät', `Värdar${isIPv6 ? '' : ' (användbara)'}`, 'Status', ''].map(h => (
+                    {[t.prefixDetail.colSubnet, isIPv6 ? t.prefixDetail.colHosts : t.prefixDetail.colHostsUsable, 'Status', ''].map(h => (
                       <th key={h} className="px-4 py-2 text-left font-medium"
                         style={{ fontSize: '11.5px', color: 'var(--c-text-3)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                         {h}
@@ -551,14 +552,14 @@ function SubnetCalculator({
                             className="inline-flex items-center gap-1 rounded px-2 py-0.5"
                             style={{ fontSize: '11.5px', background: 'oklch(62% 0.18 25 / 0.10)', border: '1px solid oklch(62% 0.18 25 / 0.22)', color: 'var(--c-danger)' }}
                           >
-                            Allokerat
+                            {t.prefixDetail.allocated}
                           </span>
                         ) : (
                           <span
                             className="inline-flex items-center gap-1 rounded px-2 py-0.5"
                             style={{ fontSize: '11.5px', background: 'oklch(65% 0.18 145 / 0.10)', border: '1px solid oklch(65% 0.18 145 / 0.22)', color: 'oklch(65% 0.18 145)' }}
                           >
-                            Ledigt
+                            {t.prefixDetail.free}
                           </span>
                         )}
                       </td>
@@ -569,7 +570,7 @@ function SubnetCalculator({
                             className="opacity-0 group-hover:opacity-100 flex items-center gap-1 rounded px-2 py-0.5 transition-opacity"
                             style={{ fontSize: '11.5px', background: 'oklch(62% 0.20 258 / 0.12)', border: '1px solid oklch(62% 0.20 258 / 0.30)', color: 'var(--c-accent)' }}
                           >
-                            <Plus size={11} /> Skapa
+                            <Plus size={11} /> {t.prefixDetail.createSubnetBtn}
                           </button>
                         )}
                       </td>
@@ -583,10 +584,10 @@ function SubnetCalculator({
       </div>
 
       {creating && (
-        <Modal title={`Skapa prefix ${creating}`} onClose={() => setCreating(null)}>
+        <Modal title={t.prefixDetail.createSubnetTitle(creating)} onClose={() => setCreating(null)}>
           <form onSubmit={handleCreate} className="space-y-3.5">
             <div>
-              <label className="lbl">CIDR</label>
+              <label className="lbl">{t.prefixes.cidr}</label>
               <input
                 type="text" value={creating} readOnly
                 className="ctrl mono"
@@ -613,9 +614,9 @@ function SubnetCalculator({
                 <select value={createForm.status}
                   onChange={e => setCreateForm(f => ({ ...f, status: e.target.value as Status }))}
                   className="ctrl">
-                  <option value="active">Active</option>
-                  <option value="reserved">Reserved</option>
-                  <option value="deprecated">Deprecated</option>
+                  <option value="active">{t.status.active}</option>
+                  <option value="reserved">{t.status.reserved}</option>
+                  <option value="deprecated">{t.status.deprecated}</option>
                 </select>
               </div>
               <div>
@@ -635,8 +636,8 @@ function SubnetCalculator({
               </p>
             )}
             <div className="flex justify-end gap-2 pt-1">
-              <button type="button" onClick={() => setCreating(null)} className="btn-ghost">Avbryt</button>
-              <button type="submit" className="btn-primary">Skapa prefix</button>
+              <button type="button" onClick={() => setCreating(null)} className="btn-ghost">{t.common.cancel}</button>
+              <button type="submit" className="btn-primary">{t.common.create}</button>
             </div>
           </form>
         </Modal>

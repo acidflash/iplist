@@ -2,16 +2,18 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { LayoutDashboard, Network, Layers, Server, Users, LogOut } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { LogoMark } from './Logo'
+import { useT, langs } from '../i18n'
 
 export function Layout() {
   const { auth, logout, isAdmin } = useAuth()
+  const { t, lang, setLang } = useT()
 
   const nav = [
-    { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-    { to: '/prefixes', label: 'Prefix', icon: Network, end: false },
-    { to: '/vlans', label: 'VLAN', icon: Layers, end: false },
-    { to: '/addresses', label: 'IP-adresser', icon: Server, end: false },
-    ...(isAdmin ? [{ to: '/users', label: 'Användare', icon: Users, end: false }] : []),
+    { to: '/', label: t.nav.dashboard, icon: LayoutDashboard, end: true },
+    { to: '/prefixes', label: t.nav.prefixes, icon: Network, end: false },
+    { to: '/vlans', label: t.nav.vlans, icon: Layers, end: false },
+    { to: '/addresses', label: t.nav.addresses, icon: Server, end: false },
+    ...(isAdmin ? [{ to: '/users', label: t.nav.users, icon: Users, end: false }] : []),
   ]
 
   return (
@@ -74,7 +76,7 @@ export function Layout() {
                 {auth?.username}
               </p>
               <p style={{ fontSize: '11px', color: 'var(--c-text-3)' }}>
-                {auth?.role === 'admin' ? 'Administratör' : 'Läsare'}
+                {auth?.role === 'admin' ? t.nav.admin : t.nav.reader}
               </p>
             </div>
           </div>
@@ -85,8 +87,31 @@ export function Layout() {
             onMouseEnter={e => { e.currentTarget.style.background = 'var(--c-raised)'; e.currentTarget.style.color = 'var(--c-text)' }}
             onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = 'var(--c-text-3)' }}
           >
-            <LogOut size={14} /> Logga ut
+            <LogOut size={14} /> {t.nav.logout}
           </button>
+
+          {/* Language switcher */}
+          <div className="flex items-center gap-1 mt-2 px-1">
+            {Object.keys(langs).map(code => (
+              <button
+                key={code}
+                onClick={() => setLang(code)}
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  padding: '2px 7px',
+                  borderRadius: '4px',
+                  border: `1px solid ${lang === code ? 'var(--c-accent)' : 'var(--c-border)'}`,
+                  color: lang === code ? 'var(--c-accent)' : 'var(--c-text-3)',
+                  background: lang === code ? 'oklch(62% 0.20 258 / 0.10)' : 'transparent',
+                  cursor: 'pointer',
+                  transition: 'all 100ms',
+                }}
+              >
+                {code.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
       </aside>
 

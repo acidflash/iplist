@@ -1,10 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import { Network } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { useT } from '../i18n'
 import axios from 'axios'
 
 export function Login() {
   const { login } = useAuth()
+  const { t } = useT()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -18,7 +20,7 @@ export function Login() {
       const { data } = await axios.post('/api/v1/auth/login', { username, password })
       login(data.token, data.username, data.role)
     } catch {
-      setError('Fel användarnamn eller lösenord')
+      setError(t.login.error)
     } finally {
       setLoading(false)
     }
@@ -41,17 +43,17 @@ export function Login() {
           >
             <Network size={16} style={{ color: 'var(--c-accent)' }} />
           </div>
-          <span className="font-semibold" style={{ fontSize: '16px' }}>IPList</span>
+          <span className="font-semibold" style={{ fontSize: '16px' }}>{t.login.title}</span>
         </div>
 
-        <h1 className="font-semibold mb-1" style={{ fontSize: '18px' }}>Logga in</h1>
+        <h1 className="font-semibold mb-1" style={{ fontSize: '18px' }}>{t.login.submit}</h1>
         <p className="mb-6" style={{ fontSize: '14px', color: 'var(--c-text-3)' }}>
-          Ange dina inloggningsuppgifter
+          {t.login.subtitle}
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="lbl">Användarnamn</label>
+            <label className="lbl">{t.login.username}</label>
             <input
               required
               type="text"
@@ -63,7 +65,7 @@ export function Login() {
             />
           </div>
           <div>
-            <label className="lbl">Lösenord</label>
+            <label className="lbl">{t.login.password}</label>
             <input
               required
               type="password"
@@ -89,7 +91,7 @@ export function Login() {
             className="btn-primary w-full"
             style={{ opacity: loading ? 0.6 : 1 }}
           >
-            {loading ? 'Loggar in…' : 'Logga in'}
+            {loading ? t.login.submitting : t.login.submit}
           </button>
         </form>
       </div>

@@ -1,4 +1,5 @@
 import type { Status } from '../types'
+import { useT } from '../i18n'
 
 const dot: Record<Status, string> = {
   active:     'var(--c-success)',
@@ -6,13 +7,13 @@ const dot: Record<Status, string> = {
   deprecated: 'var(--c-text-3)',
 }
 
-const label: Record<Status, string> = {
-  active:     'Active',
-  reserved:   'Reserved',
-  deprecated: 'Deprecated',
-}
-
 export function StatusBadge({ status }: { status: Status }) {
+  const { t } = useT()
+  const label: Record<Status, string> = {
+    active:     t.status.active,
+    reserved:   t.status.reserved,
+    deprecated: t.status.deprecated,
+  }
   return (
     <span className="inline-flex items-center gap-1.5 text-c-text2" style={{ fontSize: '12px' }}>
       <span

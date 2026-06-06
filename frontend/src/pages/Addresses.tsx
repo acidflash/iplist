@@ -7,6 +7,7 @@ import { Modal } from '../components/Modal'
 import { StatusBadge } from '../components/StatusBadge'
 import { ExportMenu } from '../components/ExportMenu'
 import { exportAddresses } from '../utils/export'
+import { useT } from '../i18n'
 
 interface FormData {
   address: string; hostname: string; dns_name: string
@@ -16,6 +17,7 @@ const emptyForm: FormData = { address: '', hostname: '', dns_name: '', descripti
 
 export function Addresses() {
   const { isAdmin } = useAuth()
+  const { t } = useT()
   const [addresses, setAddresses] = useState<IPAddress[]>([])
   const [prefixes, setPrefixes] = useState<Prefix[]>([])
   const [showModal, setShowModal] = useState(false)
@@ -43,7 +45,7 @@ export function Addresses() {
     setError(''); setShowModal(true)
   }
   const handleDelete = async (a: IPAddress) => {
-    if (!confirm(`Ta bort ${a.address}?`)) return
+    if (!confirm(t.addresses.confirmDelete(a.address))) return
     await deleteAddress(a.id); load()
   }
   const handleSubmit = async (e: React.FormEvent) => {
@@ -53,7 +55,7 @@ export function Addresses() {
       editing ? await updateAddress(editing.id, payload) : await createAddress(payload)
       setShowModal(false); load()
     } catch (err: unknown) {
-      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Något gick fel')
+      setError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || t.common.somethingWentWrong)
     }
   }
 
@@ -66,8 +68,8 @@ export function Addresses() {
     <div className="p-6 max-w-7xl">
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-base font-semibold text-c-text">IP-adresser</h1>
-          <p className="text-c-text3 mt-0.5" style={{ fontSize: '13px' }}>{addresses.length} adresser</p>
+          <h1 className="text-base font-semibold text-c-text">{t.addresses.title}</h1>
+          <p className="text-c-text3 mt-0.5" style={{ fontSize: '13px' }}>{t.addresses.count(addresses.length)}</p>
         </div>
         <div className="flex items-center gap-2">
           <ExportMenu
@@ -76,33 +78,33 @@ export function Addresses() {
           />
           {isAdmin && (
             <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
-              <Plus size={14} /> Lägg till
+              <Plus size={14} /> {t.common.add}
             </button>
           )}
         </div>
       </div>
 
       <div className="flex gap-2.5 mb-4 flex-wrap items-center">
-        <input type="text" placeholder="Sök IP, hostname, DNS…" value={search}
+        <input type="text" placeholder={t.addresses.searchPlaceholder} value={search}
           onChange={e => setSearch(e.target.value)} className="ctrl" style={{ width: '260px' }} />
         <select value={filterPrefix} onChange={e => setFilterPrefix(e.target.value)}
           className="ctrl" style={{ width: 'auto' }}>
-          <option value="">Alla prefix</option>
+          <option value="">{t.addresses.allPrefixes}</option>
           {prefixes.map(p => <option key={p.id} value={p.id}>{p.prefix}{p.name ? ` · ${p.name}` : ''}</option>)}
         </select>
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
           className="ctrl" style={{ width: 'auto' }}>
-          <option value="">Alla statusar</option>
-          <option value="active">Active</option>
-          <option value="reserved">Reserved</option>
-          <option value="deprecated">Deprecated</option>
+          <option value="">{t.status.all}</option>
+          <option value="active">{t.status.active}</option>
+          <option value="reserved">{t.status.reserved}</option>
+          <option value="deprecated">{t.status.deprecated}</option>
         </select>
       </div>
       <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--c-border-sub)' }}>
         <table className="w-full border-collapse">
           <thead>
             <tr style={{ background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)' }}>
-              {['IP-adress', 'Hostname', 'DNS', 'Prefix', 'Status', ''].map(h => (
+              {[t.addresses.colIP, t.addresses.colHostname, t.addresses.colDNS, t.addresses.colPrefix, 'Status', ''].map(h => (
                 <th key={h} className="px-4 py-2.5 text-left font-medium"
                   style={{ fontSize: '12px', color: 'var(--c-text-3)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                   {h}
@@ -116,7 +118,7 @@ export function Addresses() {
                 <td colSpan={6} className="py-14 text-center">
                   <Server size={28} style={{ color: 'var(--c-border)', margin: '0 auto 8px' }} />
                   <p className="text-c-text3" style={{ fontSize: '14px' }}>
-                    {search || filterPrefix || filterStatus ? 'Inga adresser matchar filtret' : 'Lägg till din första IP-adress'}
+                    {search || filterPrefix || filterStatus ? t.addresses.emptyFilter : t.addresses.emptyAll}
                   </p>
                 </td>
               </tr>
@@ -155,21 +157,21 @@ export function Addresses() {
       </div>
 
       {showModal && (
-        <Modal title={editing ? 'Redigera IP-adress' : 'Ny IP-adress'} onClose={() => setShowModal(false)}>
+        <Modal title={editing ? t.addresses.modalEdit : t.addresses.modalCreate} onClose={() => setShowModal(false)}>
           <form onSubmit={handleSubmit} className="space-y-3.5">
             <div>
-              <label className="lbl">IP-adress *</label>
+              <label className="lbl">{t.addresses.ipAddress} *</label>
               <input required type="text" placeholder="10.0.0.1"
                 value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} className="ctrl mono" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="lbl">Hostname</label>
+                <label className="lbl">{t.prefixDetail.hostname}</label>
                 <input type="text" placeholder="server01"
                   value={form.hostname} onChange={e => setForm(f => ({ ...f, hostname: e.target.value }))} className="ctrl" />
               </div>
               <div>
-                <label className="lbl">DNS-namn</label>
+                <label className="lbl">{t.addresses.dnsName}</label>
                 <input type="text" placeholder="server01.example.com"
                   value={form.dns_name} onChange={e => setForm(f => ({ ...f, dns_name: e.target.value }))} className="ctrl mono" />
               </div>
@@ -183,15 +185,15 @@ export function Addresses() {
               <div>
                 <label className="lbl">Status</label>
                 <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as Status }))} className="ctrl">
-                  <option value="active">Active</option>
-                  <option value="reserved">Reserved</option>
-                  <option value="deprecated">Deprecated</option>
+                  <option value="active">{t.status.active}</option>
+                  <option value="reserved">{t.status.reserved}</option>
+                  <option value="deprecated">{t.status.deprecated}</option>
                 </select>
               </div>
               <div>
-                <label className="lbl">Prefix <span style={{ color: 'var(--c-text-3)', fontWeight: 400 }}>(auto)</span></label>
+                <label className="lbl">Prefix <span style={{ color: 'var(--c-text-3)', fontWeight: 400 }}>({t.common.auto})</span></label>
                 <select value={form.prefix_id} onChange={e => setForm(f => ({ ...f, prefix_id: e.target.value }))} className="ctrl">
-                  <option value="">– Auto –</option>
+                  <option value="">– {t.common.auto} –</option>
                   {prefixes.map(p => <option key={p.id} value={p.id}>{p.prefix}</option>)}
                 </select>
               </div>
@@ -202,8 +204,8 @@ export function Addresses() {
               </p>
             )}
             <div className="flex justify-end gap-2 pt-1">
-              <button type="button" onClick={() => setShowModal(false)} className="btn-ghost">Avbryt</button>
-              <button type="submit" className="btn-primary">{editing ? 'Spara' : 'Skapa'}</button>
+              <button type="button" onClick={() => setShowModal(false)} className="btn-ghost">{t.common.cancel}</button>
+              <button type="submit" className="btn-primary">{editing ? t.common.save : t.common.create}</button>
             </div>
           </form>
         </Modal>
