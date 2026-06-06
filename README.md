@@ -69,7 +69,7 @@ docker compose up -d
 
 The app is available at [http://localhost:8080](http://localhost:8080).
 
-> **Architecture:** Nginx serves the frontend on container port 80 (mapped to host port 8080) and proxies `/api/` requests to the Go backend on the internal port 3000. Only port 8080 is exposed to the host.
+> To change the port, set `PORT=9000` in your `.env` file (or environment) before running `docker compose up`.
 
 **Default credentials — change these immediately after first login:**
 
@@ -122,7 +122,7 @@ Settings are loaded from a JSON config file. Environment variables always take p
 |-----------------------------|----------------------------|-----------------------------|
 | `db_path` / `DB_PATH`       | `iplist.db`                | Path to the SQLite database |
 | `jwt_secret` / `JWT_SECRET` | `change-me-in-production`  | Secret key for signing JWTs |
-| `port` / `PORT`             | `3000`                     | Internal port the Go server listens on (nginx proxies to this) |
+| `port` / `PORT`             | `8080`                     | Port the app is served on (host port in Docker, direct port otherwise) |
 
 The config file path defaults to `config.json` in the working directory and can be changed with the `-config` flag. If the file does not exist, the application falls back to environment variables and built-in defaults.
 

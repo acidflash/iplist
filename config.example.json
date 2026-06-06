@@ -1,5 +1,5 @@
 {
   "db_path": "iplist.db",
   "jwt_secret": "change-me-to-a-long-random-string",
-  "port": "3000"
+  "port": "8080"
 }

@@ -4,7 +4,6 @@ services:
     restart: unless-stopped
     environment:
       DB_PATH: /data/iplist.db
-      PORT: "3000"
       JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string}
     volumes:
       - sqlite_data:/data
@@ -12,7 +11,7 @@ services:
   frontend:
     build: ./frontend
     ports:
-      - "8080:80"
+      - "${PORT:-8080}:80"
     depends_on:
       - backend
     restart: unless-stopped
