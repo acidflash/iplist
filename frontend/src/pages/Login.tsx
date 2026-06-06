@@ -1,12 +1,12 @@
 import { useState, type FormEvent } from 'react'
 import { Network } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { useT } from '../i18n'
+import { useT, langs } from '../i18n'
 import axios from 'axios'
 
 export function Login() {
   const { login } = useAuth()
-  const { t } = useT()
+  const { t, lang, setLang } = useT()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -35,15 +35,38 @@ export function Login() {
         className="w-full max-w-sm rounded-xl p-8"
         style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border-sub)' }}
       >
-        {/* Logo */}
-        <div className="flex items-center gap-3 mb-8">
+        {/* Logo + language switcher */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-3">
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center"
             style={{ background: 'oklch(62% 0.20 258 / 0.15)', border: '1px solid oklch(62% 0.20 258 / 0.3)' }}
           >
             <Network size={16} style={{ color: 'var(--c-accent)' }} />
           </div>
-          <span className="font-semibold" style={{ fontSize: '16px' }}>{t.login.title}</span>
+            <span className="font-semibold" style={{ fontSize: '16px' }}>{t.login.title}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            {Object.keys(langs).map(code => (
+              <button
+                key={code}
+                onClick={() => setLang(code)}
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  padding: '2px 7px',
+                  borderRadius: '4px',
+                  border: `1px solid ${lang === code ? 'var(--c-accent)' : 'var(--c-border)'}`,
+                  color: lang === code ? 'var(--c-accent)' : 'var(--c-text-3)',
+                  background: lang === code ? 'oklch(62% 0.20 258 / 0.10)' : 'transparent',
+                  cursor: 'pointer',
+                  transition: 'all 100ms',
+                }}
+              >
+                {code.toUpperCase()}
+              </button>
+            ))}
+          </div>
         </div>
 
         <h1 className="font-semibold mb-1" style={{ fontSize: '18px' }}>{t.login.submit}</h1>
