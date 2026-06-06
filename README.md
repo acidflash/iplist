@@ -12,6 +12,7 @@ A self-hosted IP Address Management (IPAM) tool for tracking VLANs, IP prefixes,
 - **Data export** — download any list as CSV, JSON, or YAML
 - **Numeric IP sorting** — addresses sorted correctly by numeric value, not lexicographically
 - **Dark UI** — monospace-accented dark theme
+- **Multilingual** — Swedish and English built-in, with an extensible language file system for adding more
 
 ## Screenshots
 
