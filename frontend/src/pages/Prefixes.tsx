@@ -11,6 +11,7 @@ import { ExportMenu } from '../components/ExportMenu'
 import { exportPrefixes } from '../utils/export'
 import { ImportModal } from '../components/ImportModal'
 import { useT } from '../i18n'
+import { validateCIDR } from '../utils/cidr'
 
 interface FormData {
   prefix: string; name: string; description: string
@@ -159,6 +160,7 @@ export function Prefixes() {
   const [editing, setEditing] = useState<Prefix | null>(null)
   const [form, setForm] = useState<FormData>(emptyForm)
   const [error, setError] = useState('')
+  const [prefixError, setPrefixError] = useState('')
   const [search, setSearch] = useState('')
   const [showImport, setShowImport] = useState(false)
 
@@ -169,14 +171,14 @@ export function Prefixes() {
 
   useEffect(() => { load() }, [load])
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm); setError(''); setShowModal(true) }
+  const openCreate = () => { setEditing(null); setForm(emptyForm); setError(''); setPrefixError(''); setShowModal(true) }
   const openEdit = (p: Prefix) => {
     setEditing(p)
     setForm({
       prefix: p.prefix, name: p.name, description: p.description, status: p.status,
       parent_id: p.parent_id?.toString() ?? '', vlan_id: p.vlan_id?.toString() ?? '',
     })
-    setError(''); setShowModal(true)
+    setError(''); setPrefixError(''); setShowModal(true)
   }
   const handleDelete = async (p: Prefix) => {
     if (!confirm(t.prefixes.confirmDelete(p.prefix))) return
@@ -184,6 +186,8 @@ export function Prefixes() {
   }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError('')
+    const cidrErr = validateCIDR(form.prefix)
+    if (cidrErr) { setPrefixError(cidrErr); return }
     try {
       const payload = {
         prefix: form.prefix, name: form.name, description: form.description, status: form.status,
@@ -297,8 +301,17 @@ export function Prefixes() {
             <div>
               <label className="lbl">{t.prefixes.cidr} *</label>
               <input required type="text" placeholder="10.0.0.0/24 eller 2001:db8::/32"
-                value={form.prefix} onChange={e => setForm(f => ({ ...f, prefix: e.target.value }))}
-                className="ctrl mono" />
+                value={form.prefix}
+                onChange={e => {
+                  const v = e.target.value
+                  setForm(f => ({ ...f, prefix: v }))
+                  setPrefixError(validateCIDR(v))
+                }}
+                className="ctrl mono"
+                style={prefixError ? { borderColor: 'var(--c-danger)' } : undefined} />
+              {prefixError && (
+                <p style={{ fontSize: '12px', color: 'var(--c-danger)', marginTop: '4px' }}>{prefixError}</p>
+              )}
             </div>
             <div>
               <label className="lbl">Namn</label>
