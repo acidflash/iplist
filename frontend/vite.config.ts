@@ -4,7 +4,7 @@ import { execSync } from 'child_process'
 
 const apiTarget = process.env.API_TARGET || 'http://localhost:8080'
 
-const appVersion = (() => {
+const appVersion = process.env.VITE_APP_VERSION || (() => {
   try {
     return execSync('git describe --tags --always --dirty').toString().trim()
   } catch {
