@@ -29,8 +29,7 @@ export function Login() {
   return (
     <div
       className="overflow-hidden flex items-center justify-center"
-      style={{ height: 'calc(100vh / 1.25)' }}
-      style={{ background: 'var(--c-base)' }}
+      style={{ height: 'calc(100vh / 1.25)', background: 'var(--c-base)' }}
     >
       <div
         className="w-full max-w-sm rounded-xl p-8"
