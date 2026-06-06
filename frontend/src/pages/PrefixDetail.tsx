@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Plus, Pencil, Trash2, ChevronRight, Server, ChevronsRight } from 'lucide-react'
-import { getPrefix, createAddress, updateAddress, deleteAddress, getSubnets } from '../api/client'
-import type { Prefix, IPAddress, Status, SplitResponse } from '../types'
+import { getPrefix, createAddress, updateAddress, deleteAddress, getSubnets, createPrefix, getVLANs } from '../api/client'
+import type { Prefix, IPAddress, Status, SplitResponse, VLAN } from '../types'
 import { Modal } from '../components/Modal'
 import { StatusBadge } from '../components/StatusBadge'
 import { UtilizationBar } from '../components/UtilizationBar'
@@ -26,6 +26,7 @@ export function PrefixDetail() {
   const [splitLen, setSplitLen] = useState<number | null>(null)
   const [splitResult, setSplitResult] = useState<SplitResponse | null>(null)
   const [splitLoading, setSplitLoading] = useState(false)
+  const [splitKey, setSplitKey] = useState(0)
 
   const load = useCallback(async () => {
     if (!id) return
@@ -42,7 +43,7 @@ export function PrefixDetail() {
       .then(setSplitResult)
       .catch(() => setSplitResult(null))
       .finally(() => setSplitLoading(false))
-  }, [id, splitLen])
+  }, [id, splitLen, splitKey])
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setError(''); setShowModal(true) }
   const openEdit = (a: IPAddress) => {
@@ -137,6 +138,8 @@ export function PrefixDetail() {
         onSplitLenChange={len => { setSplitLen(len); setSplitResult(null) }}
         splitResult={splitResult}
         splitLoading={splitLoading}
+        isAdmin={isAdmin}
+        onCreated={() => { load(); setSplitKey(k => k + 1) }}
       />
 
       {/* Child prefixes */}
@@ -309,15 +312,56 @@ export function PrefixDetail() {
   )
 }
 
+interface CreateSubnetForm {
+  name: string; description: string; status: Status; vlan_id: string
+}
+const emptyCreateForm: CreateSubnetForm = { name: '', description: '', status: 'active', vlan_id: '' }
+
 function SubnetCalculator({
-  prefix, splitLen, onSplitLenChange, splitResult, splitLoading,
+  prefix, splitLen, onSplitLenChange, splitResult, splitLoading, isAdmin, onCreated,
 }: {
   prefix: Prefix
   splitLen: number | null
   onSplitLenChange: (len: number) => void
   splitResult: SplitResponse | null
   splitLoading: boolean
+  isAdmin: boolean
+  onCreated: () => void
 }) {
+  const [creating, setCreating] = useState<string | null>(null)
+  const [createForm, setCreateForm] = useState<CreateSubnetForm>(emptyCreateForm)
+  const [createError, setCreateError] = useState('')
+  const [vlans, setVlans] = useState<VLAN[]>([])
+
+  useEffect(() => {
+    if (isAdmin) getVLANs().then(setVlans).catch(() => {})
+  }, [isAdmin])
+
+  const openCreate = (subnet: string) => {
+    setCreating(subnet)
+    setCreateForm(emptyCreateForm)
+    setCreateError('')
+  }
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setCreateError('')
+    try {
+      await createPrefix({
+        prefix: creating!,
+        name: createForm.name,
+        description: createForm.description,
+        status: createForm.status,
+        parent_id: prefix.id,
+        vlan_id: createForm.vlan_id ? parseInt(createForm.vlan_id) : null,
+      })
+      setCreating(null)
+      onCreated()
+    } catch (err: unknown) {
+      setCreateError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || 'Något gick fel')
+    }
+  }
+
   const parts = prefix.prefix.split('/')
   const currentLen = parseInt(parts[1])
   const isIPv6 = prefix.prefix.includes(':')
@@ -383,7 +427,7 @@ function SubnetCalculator({
               <table className="w-full border-collapse">
                 <thead>
                   <tr style={{ background: 'var(--c-base)', borderBottom: '1px solid var(--c-border)' }}>
-                    {['Subnät', `Värdar${isIPv6 ? '' : ' (användbara)'}`, 'Status'].map(h => (
+                    {['Subnät', `Värdar${isIPv6 ? '' : ' (användbara)'}`, 'Status', ''].map(h => (
                       <th key={h} className="px-4 py-2 text-left font-medium"
                         style={{ fontSize: '11.5px', color: 'var(--c-text-3)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                         {h}
@@ -393,7 +437,7 @@ function SubnetCalculator({
                 </thead>
                 <tbody>
                   {splitResult.subnets.map(s => (
-                    <tr key={s.subnet} style={{ borderBottom: '1px solid var(--c-border-sub)', background: 'var(--c-surface)' }}
+                    <tr key={s.subnet} className="group" style={{ borderBottom: '1px solid var(--c-border-sub)', background: 'var(--c-surface)' }}
                       onMouseEnter={e => (e.currentTarget.style.background = 'var(--c-raised)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'var(--c-surface)')}>
                       <td className="px-4 py-2">
@@ -427,6 +471,17 @@ function SubnetCalculator({
                           </span>
                         )}
                       </td>
+                      <td className="px-3 py-2">
+                        {isAdmin && !s.allocated && (
+                          <button
+                            onClick={() => openCreate(s.subnet)}
+                            className="opacity-0 group-hover:opacity-100 flex items-center gap-1 rounded px-2 py-0.5 transition-opacity"
+                            style={{ fontSize: '11.5px', background: 'oklch(62% 0.20 258 / 0.12)', border: '1px solid oklch(62% 0.20 258 / 0.30)', color: 'var(--c-accent)' }}
+                          >
+                            <Plus size={11} /> Skapa
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -435,6 +490,66 @@ function SubnetCalculator({
           </>
         )}
       </div>
+
+      {creating && (
+        <Modal title={`Skapa prefix ${creating}`} onClose={() => setCreating(null)}>
+          <form onSubmit={handleCreate} className="space-y-3.5">
+            <div>
+              <label className="lbl">CIDR</label>
+              <input
+                type="text" value={creating} readOnly
+                className="ctrl mono"
+                style={{ opacity: 0.6, cursor: 'default' }}
+              />
+            </div>
+            <div>
+              <label className="lbl">Namn</label>
+              <input type="text" placeholder="Kontor Stockholm"
+                value={createForm.name}
+                onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
+                className="ctrl" autoFocus />
+            </div>
+            <div>
+              <label className="lbl">Beskrivning</label>
+              <textarea rows={2}
+                value={createForm.description}
+                onChange={e => setCreateForm(f => ({ ...f, description: e.target.value }))}
+                className="ctrl" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="lbl">Status</label>
+                <select value={createForm.status}
+                  onChange={e => setCreateForm(f => ({ ...f, status: e.target.value as Status }))}
+                  className="ctrl">
+                  <option value="active">Active</option>
+                  <option value="reserved">Reserved</option>
+                  <option value="deprecated">Deprecated</option>
+                </select>
+              </div>
+              <div>
+                <label className="lbl">VLAN</label>
+                <select value={createForm.vlan_id}
+                  onChange={e => setCreateForm(f => ({ ...f, vlan_id: e.target.value }))}
+                  className="ctrl">
+                  <option value="">–</option>
+                  {vlans.map(v => <option key={v.id} value={v.id}>{v.vid} · {v.name}</option>)}
+                </select>
+              </div>
+            </div>
+            {createError && (
+              <p className="rounded-md px-3 py-2"
+                style={{ fontSize: '13px', color: 'var(--c-danger)', background: 'oklch(62% 0.18 25 / 0.10)', border: '1px solid oklch(62% 0.18 25 / 0.25)' }}>
+                {createError}
+              </p>
+            )}
+            <div className="flex justify-end gap-2 pt-1">
+              <button type="button" onClick={() => setCreating(null)} className="btn-ghost">Avbryt</button>
+              <button type="submit" className="btn-primary">Skapa prefix</button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </section>
   )
 }
