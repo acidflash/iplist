@@ -42,7 +42,8 @@ html {
   zoom: 1.25;
 }
 
-body { margin: 0; background: var(--c-base); }
+html, body { height: 100%; }
+body { margin: 0; background: var(--c-base); overflow: hidden; }
 
 /* Monospace stack for IP data */
 .font-ip {
