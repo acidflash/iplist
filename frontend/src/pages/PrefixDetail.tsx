@@ -95,7 +95,7 @@ export function PrefixDetail() {
     try {
       const res = await discoverPrefix(prefix.id)
       setDiscoverResult(res)
-      if (res.added > 0 || res.updated > 0) load()
+      await load()
     } catch (err: unknown) {
       const msg = (err as { response?: { data?: string } })?.response?.data || 'Något gick fel'
       alert(msg)

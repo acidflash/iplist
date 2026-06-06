@@ -121,11 +121,11 @@ func DiscoverPrefix(prefixRepo *PrefixRepo, addrRepo *AddressRepo) http.HandlerF
 			return
 		}
 
-		// Build map of existing addresses
-		existing, _ := addrRepo.List(&id, "")
-		existingByIP := make(map[string]*IPAddress, len(existing))
-		for i := range existing {
-			existingByIP[existing[i].Address] = &existing[i]
+		// Build map from ALL addresses globally (address is UNIQUE in DB)
+		allExisting, _ := addrRepo.List(nil, "")
+		globalByIP := make(map[string]*IPAddress, len(allExisting))
+		for i := range allExisting {
+			globalByIP[allExisting[i].Address] = &allExisting[i]
 		}
 
 		// Scan concurrently (max 100 parallel)
@@ -159,7 +159,7 @@ func DiscoverPrefix(prefixRepo *PrefixRepo, addrRepo *AddressRepo) http.HandlerF
 				continue
 			}
 			alive++
-			if known, ok := existingByIP[res.ip]; ok {
+			if known, ok := globalByIP[res.ip]; ok {
 				// Update dns_name if blank and PTR found
 				if known.DNSName == "" && res.ptr != "" {
 					addrRepo.db.Exec(
@@ -169,13 +169,15 @@ func DiscoverPrefix(prefixRepo *PrefixRepo, addrRepo *AddressRepo) http.HandlerF
 					updated++
 				}
 			} else {
-				addrRepo.Create(addressRequest{
+				_, err := addrRepo.Create(addressRequest{
 					Address:  res.ip,
 					PrefixID: &id,
 					DNSName:  res.ptr,
 					Status:   "pending",
 				})
-				added++
+				if err == nil {
+					added++
+				}
 			}
 		}
 
