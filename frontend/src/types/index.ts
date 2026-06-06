@@ -11,6 +11,17 @@ export interface VLAN {
   prefixes?: Prefix[]
 }
 
+export interface NetworkInfo {
+  version: 4 | 6
+  network: string
+  broadcast?: string
+  netmask?: string
+  wildcard?: string
+  first_host: string
+  last_host: string
+  total_hosts: string
+}
+
 export interface Prefix {
   id: number
   prefix: string
@@ -27,6 +38,7 @@ export interface Prefix {
   children?: Prefix[]
   addresses?: IPAddress[]
   vlan?: VLAN
+  net_info?: NetworkInfo
 }
 
 export interface IPAddress {

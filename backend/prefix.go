@@ -181,6 +181,7 @@ func (r *PrefixRepo) GetByID(id int64) (*Prefix, error) {
 	if p.TotalIPs > 0 {
 		p.Utilization = float64(p.UsedIPs) / float64(p.TotalIPs) * 100
 	}
+	p.NetInfo = computeNetworkInfo(p.Prefix)
 
 	// Load direct children
 	childRows, err := r.db.Query(`

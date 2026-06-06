@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { ArrowLeft, Plus, Pencil, Trash2, ChevronRight, Server, ChevronsRight } from 'lucide-react'
+import { ArrowLeft, Plus, Pencil, Trash2, ChevronRight, Server, ChevronsRight, Copy, Check } from 'lucide-react'
 import { getPrefix, createAddress, updateAddress, deleteAddress, getSubnets, createPrefix, getVLANs } from '../api/client'
-import type { Prefix, IPAddress, Status, SplitResponse, VLAN } from '../types'
+import type { Prefix, IPAddress, Status, SplitResponse, VLAN, NetworkInfo } from '../types'
 import { Modal } from '../components/Modal'
 import { StatusBadge } from '../components/StatusBadge'
 import { UtilizationBar } from '../components/UtilizationBar'
@@ -130,6 +130,9 @@ export function PrefixDetail() {
           )}
         </div>
       </div>
+
+      {/* Network info */}
+      {prefix.net_info && <NetworkInfoPanel info={prefix.net_info} cidr={prefix.prefix} />}
 
       {/* Subnet Calculator */}
       <SubnetCalculator
@@ -309,6 +312,94 @@ export function PrefixDetail() {
         </Modal>
       )}
     </div>
+  )
+}
+
+function CopyField({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false)
+  const copy = () => {
+    navigator.clipboard.writeText(value).then(() => {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1500)
+    })
+  }
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span style={{ fontSize: '11px', color: 'var(--c-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+        {label}
+      </span>
+      <div className="flex items-center gap-1.5 group/cf">
+        <code className="font-ip" style={{ fontSize: '13px', color: 'var(--c-text)' }}>{value}</code>
+        <button
+          onClick={copy}
+          className="opacity-0 group-hover/cf:opacity-100 transition-opacity rounded p-0.5"
+          style={{ color: copied ? 'oklch(65% 0.18 145)' : 'var(--c-text-3)' }}
+          title="Kopiera"
+        >
+          {copied ? <Check size={11} /> : <Copy size={11} />}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function NetworkInfoPanel({ info, cidr }: { info: NetworkInfo; cidr: string }) {
+  const isIPv4 = info.version === 4
+  const prefixLen = parseInt(cidr.split('/')[1])
+  const hostBits = (isIPv4 ? 32 : 128) - prefixLen
+
+  const formatTotal = (s: string) => {
+    // For small numbers (≤ 2^53), use locale formatting
+    if (s.length <= 15) return parseInt(s).toLocaleString('sv-SE')
+    // For large IPv6 counts, show as 2^N
+    return `2^${hostBits}`
+  }
+
+  return (
+    <section className="mb-5">
+      <h2
+        className="font-medium mb-2"
+        style={{ fontSize: '13px', color: 'var(--c-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+      >
+        Nätverksinformation
+      </h2>
+      <div
+        className="rounded-lg px-5 py-4"
+        style={{ background: 'var(--c-surface)', border: '1px solid var(--c-border-sub)' }}
+      >
+        {isIPv4 ? (
+          <div className="grid gap-x-10 gap-y-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
+            <CopyField label="Nätverksadress" value={info.network} />
+            <CopyField label="Broadcast" value={info.broadcast!} />
+            <CopyField label="Nätmask" value={info.netmask!} />
+            <CopyField label="Wildcard-mask" value={info.wildcard!} />
+            <CopyField label="Första host" value={info.first_host} />
+            <CopyField label="Sista host" value={info.last_host} />
+            <div className="flex flex-col gap-0.5">
+              <span style={{ fontSize: '11px', color: 'var(--c-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Användbara hostar
+              </span>
+              <span className="font-ip tabular-nums" style={{ fontSize: '13px', color: 'var(--c-text)' }}>
+                {formatTotal(info.total_hosts)}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="grid gap-x-10 gap-y-4" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
+            <CopyField label="Första adress" value={info.first_host} />
+            <CopyField label="Sista adress" value={info.last_host} />
+            <div className="flex flex-col gap-0.5">
+              <span style={{ fontSize: '11px', color: 'var(--c-text-3)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                Totalt antal adresser
+              </span>
+              <span className="font-ip" style={{ fontSize: '13px', color: 'var(--c-text)' }}>
+                {formatTotal(info.total_hosts)}
+              </span>
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
   )
 }
 
