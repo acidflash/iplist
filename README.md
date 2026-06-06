@@ -5,7 +5,8 @@ A self-hosted IP Address Management (IPAM) tool for tracking VLANs, IP prefixes,
 ## Features
 
 - **VLAN management** — create and manage VLANs with status tracking
-- **Prefix management** — hierarchical prefix tree with utilization bars (CIDR-based)
+- **Prefix management** — hierarchical prefix tree with utilization bars, supports IPv4 and IPv6
+- **Subnet calculator** — split any prefix into smaller blocks, see which subnets are already allocated, and create new prefixes directly from the calculator
 - **IP address tracking** — hostname, DNS name, description, and status per address
 - **Role-based access control** — `admin` (full access) and `read` (read-only) roles with JWT authentication
 - **Data export** — download any list as CSV, JSON, or YAML
@@ -26,7 +27,7 @@ A self-hosted IP Address Management (IPAM) tool for tracking VLANs, IP prefixes,
 
 | Layer    | Technology                                      |
 |----------|-------------------------------------------------|
-| Backend  | Go 1.22, chi router, modernc SQLite (pure Go)  |
+| Backend  | Go 1.24, chi router, modernc SQLite (pure Go)  |
 | Auth     | JWT (HS256, 24 h expiry), bcrypt passwords      |
 | Frontend | React 18, TypeScript, Vite, Tailwind CSS        |
 | Routing  | React Router v6                                 |
@@ -139,6 +140,7 @@ The REST API is available under `/api/v1/`. All endpoints except `POST /auth/log
 | DELETE | /vlans/:id            | admin | Delete VLAN            |
 | GET    | /prefixes             | read  | List prefixes          |
 | GET    | /prefixes/:id         | read  | Get prefix with IPs    |
+| GET    | /prefixes/:id/subnets | read  | Split prefix into subnets (`?prefix_len=N`) |
 | POST   | /prefixes             | admin | Create prefix          |
 | PUT    | /prefixes/:id         | admin | Update prefix          |
 | DELETE | /prefixes/:id         | admin | Delete prefix          |
