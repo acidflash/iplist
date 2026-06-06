@@ -49,16 +49,24 @@ git clone https://github.com/acidflash/iplist.git
 cd iplist
 ```
 
-**2. Set a strong JWT secret:**
+**2. Create a `.env` file and set a strong JWT secret:**
 
 ```bash
-export JWT_SECRET=$(openssl rand -hex 32)
+cp .env.example .env
 ```
 
-Or create a `.env` file in the project root:
+Then edit `.env`:
 
 ```env
+PORT=8080
 JWT_SECRET=replace-with-a-long-random-string
+DB_PATH=/data/iplist.db
+```
+
+Generate a secret with:
+
+```bash
+openssl rand -hex 32
 ```
 
 **3. Start the application:**
@@ -67,9 +75,7 @@ JWT_SECRET=replace-with-a-long-random-string
 docker compose up -d
 ```
 
-The app is available at [http://localhost:8080](http://localhost:8080).
-
-> To change the port, set `PORT=9000` in your `.env` file (or environment) before running `docker compose up`.
+The app is available at [http://localhost:8080](http://localhost:8080). Change `PORT` in `.env` to serve on a different port.
 
 **Default credentials — change these immediately after first login:**
 

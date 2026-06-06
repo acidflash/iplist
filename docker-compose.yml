@@ -3,7 +3,7 @@ services:
     build: ./backend
     restart: unless-stopped
     environment:
-      DB_PATH: /data/iplist.db
+      DB_PATH: ${DB_PATH:-/data/iplist.db}
       JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string}
     volumes:
       - sqlite_data:/data
