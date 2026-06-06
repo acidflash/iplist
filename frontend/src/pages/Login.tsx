@@ -28,7 +28,8 @@ export function Login() {
 
   return (
     <div
-      className="h-screen overflow-hidden flex items-center justify-center"
+      className="overflow-hidden flex items-center justify-center"
+      style={{ height: 'calc(100vh / 1.25)' }}
       style={{ background: 'var(--c-base)' }}
     >
       <div
