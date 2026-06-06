@@ -20,10 +20,11 @@ type PingResult struct {
 }
 
 type DiscoverResponse struct {
-	Added   int `json:"added"`
-	Updated int `json:"updated"`
-	Alive   int `json:"alive"`
-	Total   int `json:"total"`
+	Added   int      `json:"added"`
+	Updated int      `json:"updated"`
+	Alive   int      `json:"alive"`
+	Total   int      `json:"total"`
+	Errors  []string `json:"errors,omitempty"`
 }
 
 func pingHost(ip string) bool {
@@ -154,13 +155,13 @@ func DiscoverPrefix(prefixRepo *PrefixRepo, addrRepo *AddressRepo) http.HandlerF
 		wg.Wait()
 
 		added, updated, alive := 0, 0, 0
+		var errs []string
 		for _, res := range results {
 			if !res.alive {
 				continue
 			}
 			alive++
 			if known, ok := globalByIP[res.ip]; ok {
-				// Update dns_name if blank and PTR found
 				if known.DNSName == "" && res.ptr != "" {
 					addrRepo.db.Exec(
 						"UPDATE ip_addresses SET dns_name=?, updated_at=? WHERE id=?",
@@ -175,7 +176,9 @@ func DiscoverPrefix(prefixRepo *PrefixRepo, addrRepo *AddressRepo) http.HandlerF
 					DNSName:  res.ptr,
 					Status:   "pending",
 				})
-				if err == nil {
+				if err != nil {
+					errs = append(errs, res.ip+": "+err.Error())
+				} else {
 					added++
 				}
 			}
@@ -187,6 +190,7 @@ func DiscoverPrefix(prefixRepo *PrefixRepo, addrRepo *AddressRepo) http.HandlerF
 			Updated: updated,
 			Alive:   alive,
 			Total:   len(ips),
+			Errors:  errs,
 		})
 	}
 }

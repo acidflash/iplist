@@ -284,6 +284,12 @@ export function PrefixDetail() {
               <strong style={{ color: 'var(--c-success)' }}>{discoverResult.alive}</strong> svarade,{' '}
               <strong style={{ color: 'var(--c-accent)' }}>{discoverResult.added}</strong> nya tillagda som <em>väntande</em>
               {discoverResult.updated > 0 && <>, <strong style={{ color: 'var(--c-accent)' }}>{discoverResult.updated}</strong> PTR uppdaterade</>}
+              {discoverResult.errors && discoverResult.errors.length > 0 && (
+                <details style={{ marginTop: 4 }}>
+                  <summary style={{ cursor: 'pointer', color: 'var(--c-danger)', fontSize: '12px' }}>{discoverResult.errors.length} fel</summary>
+                  <pre style={{ fontSize: '11px', color: 'var(--c-danger)', marginTop: 4, whiteSpace: 'pre-wrap' }}>{discoverResult.errors.join('\n')}</pre>
+                </details>
+              )}
             </span>
             <button onClick={() => setDiscoverResult(null)} style={{ marginLeft: 'auto', color: 'var(--c-text-3)', fontSize: '16px', lineHeight: 1 }}>×</button>
           </div>
