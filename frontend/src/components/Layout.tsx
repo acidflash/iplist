@@ -90,8 +90,15 @@ export function Layout() {
             <LogOut size={14} /> {t.nav.logout}
           </button>
 
+          {/* Version */}
+          <div className="px-1 mt-2">
+            <span style={{ fontSize: '10px', color: 'var(--c-text-3)', fontFamily: 'monospace', letterSpacing: '0.03em' }}>
+              {__APP_VERSION__}
+            </span>
+          </div>
+
           {/* Language switcher */}
-          <div className="flex items-center gap-1 mt-2 px-1">
+          <div className="flex items-center gap-1 mt-1 px-1">
             {Object.keys(langs).map(code => (
               <button
                 key={code}
