@@ -53,6 +53,20 @@ if (calcSelect) {
 await page.screenshot({ path: `${OUT}prefix_detail.png` })
 console.log('✓ prefix detail')
 
+// Ping sweep — click "Pinga alla" and wait for results
+const pingBtn = await page.evaluateHandle(() =>
+  Array.from(document.querySelectorAll('button')).find(b =>
+    b.textContent?.includes('Pinga') || b.textContent?.includes('Ping')
+  ) ?? null
+)
+const pingEl = pingBtn.asElement()
+if (pingEl) {
+  await pingEl.click()
+  await new Promise(r => setTimeout(r, 4000))
+  await page.screenshot({ path: `${OUT}ping.png` })
+  console.log('✓ ping')
+}
+
 // VLANs
 await page.goto(`${BASE}/vlans`, { waitUntil: 'networkidle0' })
 await page.screenshot({ path: `${OUT}vlans.png` })

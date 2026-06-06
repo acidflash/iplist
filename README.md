@@ -10,7 +10,8 @@ A self-hosted IP Address Management (IPAM) tool for tracking VLANs, IP prefixes,
 - **IP address tracking** — hostname, DNS name, description, and status per address
 - **Role-based access control** — `admin` (full access) and `read` (read-only) roles with JWT authentication
 - **Data export** — download any list as CSV, JSON, or YAML
-- **CSV import** — bulk-import VLANs and IP addresses from CSV files; partial success with per-row error reporting
+- **CSV import** — bulk-import VLANs, prefixes, and IP addresses from CSV files; partial success with per-row error reporting
+- **Ping sweep** — ping all IP addresses in a prefix to see which ones are alive
 - **Numeric IP sorting** — addresses sorted correctly by numeric value, not lexicographically
 - **Dark UI** — monospace-accented dark theme
 - **Multilingual** — Swedish and English built-in, with an extensible language file system for adding more
@@ -26,6 +27,8 @@ A self-hosted IP Address Management (IPAM) tool for tracking VLANs, IP prefixes,
 ![IP addresses](docs/screenshots/addresses.png)
 
 ![CSV import](docs/screenshots/import_modal.png)
+
+![Ping sweep](docs/screenshots/ping.png)
 
 ## Tech stack
 
