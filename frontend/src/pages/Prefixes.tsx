@@ -28,6 +28,11 @@ function buildTree(prefixes: Prefix[]): Prefix[] {
     if (p.parent_id && map.has(p.parent_id)) map.get(p.parent_id)!.children!.push(p)
     else roots.push(p)
   })
+  // Surface any prefix not reachable from roots (e.g. circular parent references)
+  const reachable = new Set<number>()
+  const visit = (p: Prefix) => { reachable.add(p.id); p.children?.forEach(visit) }
+  roots.forEach(visit)
+  map.forEach(p => { if (!reachable.has(p.id)) roots.push(p) })
   return roots
 }
 
