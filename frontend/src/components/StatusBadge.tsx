@@ -5,6 +5,7 @@ const dot: Record<Status, string> = {
   active:     'var(--c-success)',
   reserved:   'var(--c-accent)',
   deprecated: 'var(--c-text-3)',
+  pending:    'var(--c-warning)',
 }
 
 export function StatusBadge({ status }: { status: Status }) {
@@ -13,6 +14,7 @@ export function StatusBadge({ status }: { status: Status }) {
     active:     t.status.active,
     reserved:   t.status.reserved,
     deprecated: t.status.deprecated,
+    pending:    t.status.pending,
   }
   return (
     <span className="inline-flex items-center gap-1.5 text-c-text2" style={{ fontSize: '12px' }}>

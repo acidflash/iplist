@@ -19,6 +19,7 @@ const sv: Translations = {
     active: 'Aktiv',
     reserved: 'Reserverad',
     deprecated: 'Utgången',
+    pending: 'Väntande',
     all: 'Alla statusar',
   },
 

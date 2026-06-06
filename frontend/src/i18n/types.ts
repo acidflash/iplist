@@ -32,6 +32,7 @@ export interface Translations {
     active: string
     reserved: string
     deprecated: string
+    pending: string
     /** "All statuses" option in filter dropdowns */
     all: string
   }

@@ -1,4 +1,4 @@
-export type Status = 'active' | 'reserved' | 'deprecated'
+export type Status = 'active' | 'reserved' | 'deprecated' | 'pending'
 
 export interface VLAN {
   id: number

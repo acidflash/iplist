@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { ArrowLeft, Plus, Pencil, Trash2, ChevronRight, Server, ChevronsRight, Copy, Check } from 'lucide-react'
-import { getPrefix, createAddress, updateAddress, deleteAddress, getSubnets, createPrefix, getVLANs, pingPrefix } from '../api/client'
-import type { PingResult } from '../api/client'
+import { getPrefix, createAddress, updateAddress, deleteAddress, getSubnets, createPrefix, getVLANs, pingPrefix, discoverPrefix } from '../api/client'
+import type { PingResult, DiscoverResult } from '../api/client'
 import type { Prefix, IPAddress, Status, SplitResponse, VLAN, NetworkInfo } from '../types'
 import { Modal } from '../components/Modal'
 import { StatusBadge } from '../components/StatusBadge'
@@ -41,6 +41,8 @@ export function PrefixDetail() {
   const [splitKey, setSplitKey] = useState(0)
   const [pingMap, setPingMap] = useState<Map<number, boolean>>(new Map())
   const [pinging, setPinging] = useState(false)
+  const [discovering, setDiscovering] = useState(false)
+  const [discoverResult, setDiscoverResult] = useState<DiscoverResult | null>(null)
 
   const load = useCallback(async () => {
     if (!id) return
@@ -84,6 +86,21 @@ export function PrefixDetail() {
       setPingMap(m)
     } finally {
       setPinging(false)
+    }
+  }
+  const handleDiscover = async () => {
+    if (!prefix || discovering) return
+    setDiscovering(true)
+    setDiscoverResult(null)
+    try {
+      const res = await discoverPrefix(prefix.id)
+      setDiscoverResult(res)
+      if (res.added > 0 || res.updated > 0) load()
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: string } })?.response?.data || 'Något gick fel'
+      alert(msg)
+    } finally {
+      setDiscovering(false)
     }
   }
   const handleSubmit = async (e: React.FormEvent) => {
@@ -232,9 +249,20 @@ export function PrefixDetail() {
             {t.prefixDetail.addresses} <span style={{ color: 'var(--c-text-3)', fontWeight: 400, marginLeft: 6 }}>{addresses.length}</span>
           </h2>
           <div className="flex items-center gap-2">
+            {isAdmin && (
+              <button
+                onClick={handleDiscover}
+                disabled={discovering || pinging}
+                className="btn-ghost flex items-center gap-1.5"
+                style={{ opacity: discovering ? 0.5 : 1 }}
+              >
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: discovering ? 'var(--c-warning)' : 'var(--c-purple)', display: 'inline-block' }} />
+                {discovering ? 'Skannar…' : 'Skanna subnät'}
+              </button>
+            )}
             <button
               onClick={handlePing}
-              disabled={pinging || addresses.length === 0}
+              disabled={pinging || discovering || addresses.length === 0}
               className="btn-ghost flex items-center gap-1.5"
               style={{ opacity: pinging || addresses.length === 0 ? 0.5 : 1 }}
             >
@@ -248,6 +276,18 @@ export function PrefixDetail() {
             )}
           </div>
         </div>
+
+        {discoverResult && (
+          <div className="mb-2 px-3 py-2 rounded-md flex items-center gap-3" style={{ fontSize: '13px', background: 'oklch(62% 0.20 258 / 0.08)', border: '1px solid oklch(62% 0.20 258 / 0.25)' }}>
+            <span style={{ color: 'var(--c-text-2)' }}>
+              Skannade <strong style={{ color: 'var(--c-text)' }}>{discoverResult.total}</strong> adresser —{' '}
+              <strong style={{ color: 'var(--c-success)' }}>{discoverResult.alive}</strong> svarade,{' '}
+              <strong style={{ color: 'var(--c-accent)' }}>{discoverResult.added}</strong> nya tillagda som <em>väntande</em>
+              {discoverResult.updated > 0 && <>, <strong style={{ color: 'var(--c-accent)' }}>{discoverResult.updated}</strong> PTR uppdaterade</>}
+            </span>
+            <button onClick={() => setDiscoverResult(null)} style={{ marginLeft: 'auto', color: 'var(--c-text-3)', fontSize: '16px', lineHeight: 1 }}>×</button>
+          </div>
+        )}
 
         <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--c-border-sub)' }}>
           <table className="w-full border-collapse">
@@ -348,6 +388,7 @@ export function PrefixDetail() {
               <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as Status }))}
                 className="ctrl">
                 <option value="active">{t.status.active}</option>
+                <option value="pending">{t.status.pending}</option>
                 <option value="reserved">{t.status.reserved}</option>
                 <option value="deprecated">{t.status.deprecated}</option>
               </select>

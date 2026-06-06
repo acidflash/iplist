@@ -86,3 +86,7 @@ export const deleteUser = (id: number) => api.delete(`/users/${id}`)
 // Ping
 export interface PingResult { address_id: number; address: string; alive: boolean }
 export const pingPrefix = (id: number) => api.get<PingResult[]>(`/prefixes/${id}/ping`).then(r => r.data)
+
+// Discover
+export interface DiscoverResult { added: number; updated: number; alive: number; total: number }
+export const discoverPrefix = (id: number) => api.post<DiscoverResult>(`/prefixes/${id}/discover`).then(r => r.data)

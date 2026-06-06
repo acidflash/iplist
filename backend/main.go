@@ -107,6 +107,7 @@ func main() {
 
 				r.Post("/prefixes", CreatePrefix(prefixRepo))
 				r.Post("/prefixes/import", ImportPrefixes(prefixRepo, vlanRepo))
+				r.Post("/prefixes/{id}/discover", DiscoverPrefix(prefixRepo, addressRepo))
 				r.Put("/prefixes/{id}", UpdatePrefix(prefixRepo))
 				r.Delete("/prefixes/{id}", DeletePrefix(prefixRepo))
 

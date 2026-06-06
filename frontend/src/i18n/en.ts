@@ -19,6 +19,7 @@ const en: Translations = {
     active: 'Active',
     reserved: 'Reserved',
     deprecated: 'Deprecated',
+    pending: 'Pending',
     all: 'All statuses',
   },
 
