@@ -58,6 +58,23 @@ await page.goto(`${BASE}/vlans`, { waitUntil: 'networkidle0' })
 await page.screenshot({ path: `${OUT}vlans.png` })
 console.log('✓ vlans')
 
+// Import modal (open on VLANs page)
+const importBtn = await page.evaluateHandle(() => {
+  return Array.from(document.querySelectorAll('button')).find(b =>
+    b.textContent?.includes('Import') || b.textContent?.includes('Importera')
+  ) ?? null
+})
+const el = importBtn.asElement()
+if (el) {
+  await el.click()
+  await new Promise(r => setTimeout(r, 500))
+  await page.screenshot({ path: `${OUT}import_modal.png` })
+  console.log('✓ import modal')
+  // Press Escape to close
+  await page.keyboard.press('Escape')
+  await new Promise(r => setTimeout(r, 200))
+}
+
 // Addresses
 await page.goto(`${BASE}/addresses`, { waitUntil: 'networkidle0' })
 await page.screenshot({ path: `${OUT}addresses.png` })

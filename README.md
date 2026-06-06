@@ -25,6 +25,8 @@ A self-hosted IP Address Management (IPAM) tool for tracking VLANs, IP prefixes,
 
 ![IP addresses](docs/screenshots/addresses.png)
 
+![CSV import](docs/screenshots/import_modal.png)
+
 ## Tech stack
 
 | Layer    | Technology                                      |
