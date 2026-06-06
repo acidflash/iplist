@@ -68,6 +68,8 @@ export const importVLANs = (file: File) =>
   api.post<ImportResult>('/vlans/import', csvForm(file), { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data)
 export const importAddresses = (file: File) =>
   api.post<ImportResult>('/addresses/import', csvForm(file), { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data)
+export const importPrefixes = (file: File) =>
+  api.post<ImportResult>('/prefixes/import', csvForm(file), { headers: { 'Content-Type': 'multipart/form-data' } }).then(r => r.data)
 
 // Stats
 export const getStats = () => api.get<Stats>('/stats').then(r => r.data)

@@ -147,6 +147,7 @@ The REST API is available under `/api/v1/`. All endpoints except `POST /auth/log
 | GET    | /prefixes/:id         | read  | Get prefix with IPs    |
 | GET    | /prefixes/:id/subnets | read  | Split prefix into subnets (`?prefix_len=N`) |
 | POST   | /prefixes             | admin | Create prefix          |
+| POST   | /prefixes/import      | admin | Import prefixes from CSV |
 | PUT    | /prefixes/:id         | admin | Update prefix          |
 | DELETE | /prefixes/:id         | admin | Delete prefix          |
 | GET    | /addresses            | read  | List IP addresses      |

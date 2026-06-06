@@ -1,0 +1,8 @@
+prefix,name,description,status,vlan_vid
+10.0.0.0/8,RFC1918 Class A,,active,
+10.0.0.0/16,Stockholm DC,Main datacenter,active,
+10.0.0.0/24,Management-LAN,Network devices,active,10
+10.1.0.0/24,Servers,Production servers,active,20
+10.2.0.0/24,Clients,Workstations,active,30
+192.168.0.0/16,RFC1918 Class C,,active,
+192.168.1.0/24,Office Stockholm,Main office,active,30

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { Plus, Pencil, Trash2, ChevronRight, ChevronDown, Network } from 'lucide-react'
-import { getPrefixes, createPrefix, updatePrefix, deletePrefix, getVLANs } from '../api/client'
+import { Plus, Pencil, Trash2, ChevronRight, ChevronDown, Network, Upload } from 'lucide-react'
+import { getPrefixes, createPrefix, updatePrefix, deletePrefix, getVLANs, importPrefixes } from '../api/client'
 import type { Prefix, VLAN, Status } from '../types'
 import { Modal } from '../components/Modal'
 import { UtilizationBar } from '../components/UtilizationBar'
@@ -9,6 +9,7 @@ import { StatusBadge } from '../components/StatusBadge'
 import { useAuth } from '../context/AuthContext'
 import { ExportMenu } from '../components/ExportMenu'
 import { exportPrefixes } from '../utils/export'
+import { ImportModal } from '../components/ImportModal'
 import { useT } from '../i18n'
 
 interface FormData {
@@ -159,6 +160,7 @@ export function Prefixes() {
   const [form, setForm] = useState<FormData>(emptyForm)
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
+  const [showImport, setShowImport] = useState(false)
 
   const load = useCallback(async () => {
     const [p, v] = await Promise.all([getPrefixes(), getVLANs()])
@@ -212,9 +214,18 @@ export function Prefixes() {
         <div className="flex items-center gap-2">
           <ExportMenu onExport={fmt => exportPrefixes(prefixes, fmt)} disabled={prefixes.length === 0} />
           {isAdmin && (
-            <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
-              <Plus size={14} /> {t.common.add}
-            </button>
+            <>
+              <button
+                onClick={() => setShowImport(true)}
+                className="btn-ghost flex items-center gap-1.5"
+                style={{ fontSize: '13px' }}
+              >
+                <Upload size={13} /> {t.importCSV.btn}
+              </button>
+              <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
+                <Plus size={14} /> {t.common.add}
+              </button>
+            </>
           )}
         </div>
       </div>
@@ -268,6 +279,17 @@ export function Prefixes() {
           </tbody>
         </table>
       </div>
+
+      {showImport && (
+        <ImportModal
+          what={t.prefixes.title}
+          formatHint="prefix, name, description, status, vlan_vid"
+          exampleFile="/examples/prefixes.csv"
+          onImport={importPrefixes}
+          onDone={load}
+          onClose={() => setShowImport(false)}
+        />
+      )}
 
       {showModal && (
         <Modal title={editing ? t.prefixes.modalEdit : t.prefixes.modalCreate} onClose={() => setShowModal(false)}>

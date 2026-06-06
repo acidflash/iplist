@@ -105,6 +105,7 @@ func main() {
 				r.Use(RequireAdmin)
 
 				r.Post("/prefixes", CreatePrefix(prefixRepo))
+				r.Post("/prefixes/import", ImportPrefixes(prefixRepo, vlanRepo))
 				r.Put("/prefixes/{id}", UpdatePrefix(prefixRepo))
 				r.Delete("/prefixes/{id}", DeletePrefix(prefixRepo))
 

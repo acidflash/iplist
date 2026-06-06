@@ -186,11 +186,88 @@ func ImportAddresses(repo *AddressRepo) http.HandlerFunc {
 	}
 }
 
-// csvTemplate returns a sample CSV string for use in the UI.
-func VLANCSVTemplate() string {
-	return "vid,name,description,status\n100,Management,,active\n200,Servers,Server VLAN,active\n"
-}
+// ImportPrefixes handles POST /prefixes/import
+// Expected CSV columns (order-independent): prefix, name, description, status, vlan_vid
+// parent_id is auto-detected. vlan_vid matches against VLAN vid numbers.
+func ImportPrefixes(prefixRepo *PrefixRepo, vlanRepo *VLANRepo) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		headers, rows, err := parseCSVUpload(r)
+		if err != nil {
+			respondError(w, http.StatusBadRequest, "could not parse CSV: "+err.Error())
+			return
+		}
 
-func AddressCSVTemplate() string {
-	return "address,hostname,dns_name,description,status\n10.0.0.1,gw01,gw01.example.com,,active\n10.0.0.2,server01,server01.example.com,Web server,active\n"
+		prefixIdx := colIndex(headers, "prefix")
+		nameIdx := colIndex(headers, "name")
+		descIdx := colIndex(headers, "description")
+		statusIdx := colIndex(headers, "status")
+		vlanVidIdx := colIndex(headers, "vlan_vid")
+
+		if prefixIdx < 0 {
+			respondError(w, http.StatusBadRequest, "CSV must have a 'prefix' column")
+			return
+		}
+
+		// Build vid→id map so users can reference VLANs by VID number
+		vidToID := map[int]int64{}
+		if vlanVidIdx >= 0 {
+			if vlans, err := vlanRepo.List(); err == nil {
+				for _, v := range vlans {
+					vidToID[v.Vid] = v.ID
+				}
+			}
+		}
+
+		var result importResult
+		result.Errors = []importError{}
+
+		for i, row := range rows {
+			lineNum := i + 2
+			if len(row) == 0 || (len(row) == 1 && row[0] == "") {
+				continue
+			}
+
+			cidr := colVal(row, prefixIdx)
+			if cidr == "" {
+				result.Errors = append(result.Errors, importError{Row: lineNum, Error: "prefix is empty"})
+				result.Skipped++
+				continue
+			}
+
+			status := colVal(row, statusIdx)
+			if status == "" {
+				status = "active"
+			}
+
+			req := prefixRequest{
+				Prefix:      cidr,
+				Name:        colVal(row, nameIdx),
+				Description: colVal(row, descIdx),
+				Status:      status,
+			}
+
+			if vlanVidIdx >= 0 {
+				if vidStr := colVal(row, vlanVidIdx); vidStr != "" {
+					vid, err := strconv.Atoi(vidStr)
+					if err != nil {
+						result.Errors = append(result.Errors, importError{Row: lineNum, Error: "invalid vlan_vid: " + vidStr})
+						result.Skipped++
+						continue
+					}
+					if id, ok := vidToID[vid]; ok {
+						req.VlanID = &id
+					}
+				}
+			}
+
+			if _, err := prefixRepo.Create(req); err != nil {
+				result.Errors = append(result.Errors, importError{Row: lineNum, Error: err.Error()})
+				result.Skipped++
+				continue
+			}
+			result.Imported++
+		}
+
+		respondJSON(w, http.StatusOK, result)
+	}
 }
