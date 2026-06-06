@@ -15,6 +15,15 @@ interface AddrForm {
 }
 const emptyForm: AddrForm = { address: '', hostname: '', dns_name: '', description: '', status: 'active' }
 
+function networkPrefix(cidr: string): string {
+  const [network, lenStr] = cidr.split('/')
+  if (network.includes(':')) return '' // IPv6 — skip
+  const len = parseInt(lenStr, 10)
+  const fullOctets = Math.floor(len / 8)
+  if (fullOctets === 0 || fullOctets >= 4) return ''
+  return network.split('.').slice(0, fullOctets).join('.') + '.'
+}
+
 export function PrefixDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -47,7 +56,12 @@ export function PrefixDetail() {
       .finally(() => setSplitLoading(false))
   }, [id, splitLen, splitKey])
 
-  const openCreate = () => { setEditing(null); setForm(emptyForm); setError(''); setShowModal(true) }
+  const openCreate = () => {
+    setEditing(null)
+    setForm({ ...emptyForm, address: prefix ? networkPrefix(prefix.prefix) : '' })
+    setError('')
+    setShowModal(true)
+  }
   const openEdit = (a: IPAddress) => {
     setEditing(a)
     setForm({ address: a.address, hostname: a.hostname, dns_name: a.dns_name, description: a.description, status: a.status })
@@ -268,7 +282,8 @@ export function PrefixDetail() {
           <form onSubmit={handleSubmit} className="space-y-3.5">
             <div>
               <label className="lbl">{t.prefixDetail.ipAddress} *</label>
-              <input required type="text" placeholder="192.168.1.10 eller 2001:db8::1"
+              <input required type="text"
+                placeholder={prefix && !editing ? networkPrefix(prefix.prefix) + '…' : ''}
                 value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
                 className="ctrl mono" />
             </div>
