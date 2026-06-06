@@ -500,6 +500,10 @@ func (r *PrefixRepo) SplitSubnets(p *Prefix, newLen int) (*SplitResponse, error)
 		if prBits != bits {
 			continue
 		}
+		// Skip supernets: only consider prefixes that are subnets of the parent
+		if prOnes < ones {
+			continue
+		}
 		if !network.Contains(prNet.IP) {
 			continue
 		}
