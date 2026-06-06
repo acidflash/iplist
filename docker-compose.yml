@@ -5,6 +5,7 @@ services:
     environment:
       DB_PATH: ${DB_PATH:-/data/iplist.db}
       JWT_SECRET: ${JWT_SECRET:-change-me-to-a-long-random-string}
+      PORT: "3000"
     volumes:
       - ./data:/data
 
