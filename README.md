@@ -10,6 +10,7 @@ A self-hosted IP Address Management (IPAM) tool for tracking VLANs, IP prefixes,
 - **IP address tracking** — hostname, DNS name, description, and status per address
 - **Role-based access control** — `admin` (full access) and `read` (read-only) roles with JWT authentication
 - **Data export** — download any list as CSV, JSON, or YAML
+- **CSV import** — bulk-import VLANs and IP addresses from CSV files; partial success with per-row error reporting
 - **Numeric IP sorting** — addresses sorted correctly by numeric value, not lexicographically
 - **Dark UI** — monospace-accented dark theme
 - **Multilingual** — Swedish and English built-in, with an extensible language file system for adding more
@@ -137,6 +138,7 @@ The REST API is available under `/api/v1/`. All endpoints except `POST /auth/log
 | GET    | /stats                | read  | Dashboard stats        |
 | GET    | /vlans                | read  | List VLANs             |
 | POST   | /vlans                | admin | Create VLAN            |
+| POST   | /vlans/import         | admin | Import VLANs from CSV  |
 | PUT    | /vlans/:id            | admin | Update VLAN            |
 | DELETE | /vlans/:id            | admin | Delete VLAN            |
 | GET    | /prefixes             | read  | List prefixes          |
@@ -147,6 +149,7 @@ The REST API is available under `/api/v1/`. All endpoints except `POST /auth/log
 | DELETE | /prefixes/:id         | admin | Delete prefix          |
 | GET    | /addresses            | read  | List IP addresses      |
 | POST   | /addresses            | admin | Create IP address      |
+| POST   | /addresses/import     | admin | Import addresses from CSV |
 | PUT    | /addresses/:id        | admin | Update IP address      |
 | DELETE | /addresses/:id        | admin | Delete IP address      |
 | GET    | /users                | admin | List users             |
