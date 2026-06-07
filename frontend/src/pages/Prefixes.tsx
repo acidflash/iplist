@@ -43,6 +43,7 @@ function PrefixRow({
   onEdit: (p: Prefix) => void; onDelete: (p: Prefix) => void
 }) {
   const { isAdmin } = useAuth()
+  const { t } = useT()
   const [expanded, setExpanded] = useState(depth < 2)
   const hasChildren = (prefix.children?.length ?? 0) > 0
 
@@ -120,9 +121,14 @@ function PrefixRow({
           <UtilizationBar value={prefix.utilization} />
         </td>
         <td className="px-4 py-2">
-          <span className="font-ip tabular-nums text-c-text3" style={{ fontSize: '12.5px' }}>
+          <span className="font-ip tabular-nums" style={{ fontSize: '12.5px', color: 'var(--c-text-2)' }}>
             {prefix.used_ips}/{prefix.total_ips}
           </span>
+          {prefix.total_ips > 0 && (
+            <span className="font-ip tabular-nums" style={{ fontSize: '11.5px', color: 'var(--c-text-3)', marginLeft: '5px' }}>
+              ({prefix.total_ips - prefix.used_ips} {t.prefixes.free})
+            </span>
+          )}
         </td>
         <td className="px-3 py-2">
           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
