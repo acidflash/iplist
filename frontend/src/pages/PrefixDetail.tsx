@@ -170,6 +170,11 @@ export function PrefixDetail() {
             )}
             <span>{prefix.total_ips} IP-adresser totalt</span>
             <span>{prefix.used_ips} använda</span>
+            {prefix.total_ips > 0 && (
+              <span style={{ color: 'var(--c-text-3)' }}>
+                {prefix.total_ips - prefix.used_ips} {t.prefixDetail.free}
+              </span>
+            )}
           </div>
           {prefix.total_ips > 0 && (
             <div className="mt-3 max-w-xs">
