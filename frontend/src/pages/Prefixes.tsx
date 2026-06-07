@@ -126,7 +126,7 @@ function PrefixRow({
           </span>
           {prefix.total_ips > 0 && (
             <span className="font-ip tabular-nums" style={{ fontSize: '11.5px', color: 'var(--c-text-3)', marginLeft: '5px' }}>
-              ({prefix.total_ips - prefix.used_ips} {t.prefixes.free})
+              ({prefix.total_ips - prefix.used_ips} {t.prefixDetail.free})
             </span>
           )}
         </td>
