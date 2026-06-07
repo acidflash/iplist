@@ -44,7 +44,7 @@ export function Dashboard() {
         <Divider />
         <Stat icon={Server} label={t.dashboard.ipAddresses} value={stats?.total_addresses} to="/addresses" />
         <Divider />
-        <div className="flex items-center gap-2 text-c-text2">
+        <div className="flex items-center gap-2 text-c-text2" title={t.dashboard.utilizationHint}>
           <span>{t.dashboard.utilization}</span>
           <span className="font-semibold text-c-text tabular-nums">
             {stats ? `${stats.utilization.toFixed(1)}%` : '–'}

@@ -336,20 +336,20 @@ export function Prefixes() {
               )}
             </div>
             <div>
-              <label className="lbl">Namn</label>
-              <input type="text" placeholder="Kontor Stockholm"
+              <label className="lbl">{t.common.name}</label>
+              <input type="text" placeholder={t.prefixDetail.namePlaceholder}
                 value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
                 className="ctrl" />
             </div>
             <div>
-              <label className="lbl">Beskrivning</label>
+              <label className="lbl">{t.common.description}</label>
               <textarea rows={2}
                 value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 className="ctrl" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="lbl">Status</label>
+                <label className="lbl">{t.common.status}</label>
                 <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as Status }))}
                   className="ctrl">
                   <option value="active">{t.status.active}</option>

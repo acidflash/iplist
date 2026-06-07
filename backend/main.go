@@ -13,10 +13,22 @@ import (
 func main() {
 	seedFlag := flag.Bool("seed", false, "Seed database with test data (only if empty)")
 	configPath := flag.String("config", "config.json", "Path to JSON config file")
+	devFlag := flag.Bool("dev", false, "Development mode — allows running with an insecure default JWT secret")
 	flag.Parse()
 
 	if err := LoadConfig(*configPath); err != nil {
 		log.Fatalf("Failed to load config: %v", err)
+	}
+
+	// Refuse to start with a forgeable token-signing secret unless explicitly
+	// in dev mode. An attacker who knows the secret can mint admin tokens.
+	if appCfg.InsecureJWTSecret() {
+		if *devFlag {
+			log.Println("WARNING: running with an insecure default JWT secret (-dev). Do NOT use this in production.")
+		} else {
+			log.Fatal("Refusing to start: JWT_SECRET is unset or the default placeholder. " +
+				"Set a strong secret (e.g. `openssl rand -hex 32`), or pass -dev for local development.")
+		}
 	}
 
 	db, err := InitDB(appCfg.DBPath)
@@ -48,7 +60,7 @@ func main() {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 	r.Use(cors.Handler(cors.Options{
-		AllowedOrigins: []string{"*"},
+		AllowedOrigins: appCfg.CORSOrigins,
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders: []string{"Accept", "Authorization", "Content-Type"},
 	}))
@@ -95,7 +107,7 @@ func main() {
 			r.Get("/prefixes", ListPrefixes(prefixRepo))
 			r.Get("/prefixes/{id}", GetPrefix(prefixRepo))
 			r.Get("/prefixes/{id}/subnets", GetSubnets(prefixRepo))
-				r.Get("/prefixes/{id}/ping", PingPrefix(addressRepo))
+			r.Get("/prefixes/{id}/ping", PingPrefix(addressRepo))
 			r.Get("/vlans", ListVLANs(vlanRepo))
 			r.Get("/vlans/{id}", GetVLAN(vlanRepo, prefixRepo))
 			r.Get("/addresses", ListAddresses(addressRepo))

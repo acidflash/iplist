@@ -200,13 +200,13 @@ export function Addresses() {
               </div>
             </div>
             <div>
-              <label className="lbl">Beskrivning</label>
+              <label className="lbl">{t.common.description}</label>
               <input type="text" value={form.description}
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="ctrl" />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="lbl">Status</label>
+                <label className="lbl">{t.common.status}</label>
                 <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as Status }))} className="ctrl">
                   <option value="active">{t.status.active}</option>
                   <option value="pending">{t.status.pending}</option>

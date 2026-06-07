@@ -130,10 +130,13 @@ Settings are loaded from a JSON config file. Environment variables always take p
 | Key / Env variable          | Default                    | Description                 |
 |-----------------------------|----------------------------|-----------------------------|
 | `db_path` / `DB_PATH`       | `iplist.db`                | Path to the SQLite database |
-| `jwt_secret` / `JWT_SECRET` | `change-me-in-production`  | Secret key for signing JWTs |
+| `jwt_secret` / `JWT_SECRET` | `change-me-in-production`  | Secret key for signing JWTs. The server **refuses to start** if this is unset or left at the default — set a strong value or pass `-dev` for local development |
 | `port` / `PORT`             | `8080`                     | Port the app is served on (host port in Docker, direct port otherwise) |
+| `cors_origins` / `CORS_ORIGINS` | `*`                    | Comma-separated list of allowed CORS origins. Lock this down to your frontend's origin in production |
 
 The config file path defaults to `config.json` in the working directory and can be changed with the `-config` flag. If the file does not exist, the application falls back to environment variables and built-in defaults.
+
+> **Note:** Because the API uses bearer-token auth, set a real `JWT_SECRET` before exposing the app. For local development you can bypass the secret check with `./iplist -dev`.
 
 ## API
 
@@ -152,8 +155,10 @@ The REST API is available under `/api/v1/`. All endpoints except `POST /auth/log
 | GET    | /prefixes             | read  | List prefixes          |
 | GET    | /prefixes/:id         | read  | Get prefix with IPs    |
 | GET    | /prefixes/:id/subnets | read  | Split prefix into subnets (`?prefix_len=N`) |
+| GET    | /prefixes/:id/ping    | read  | Ping all known addresses in a prefix |
 | POST   | /prefixes             | admin | Create prefix          |
 | POST   | /prefixes/import      | admin | Import prefixes from CSV |
+| POST   | /prefixes/:id/discover | admin | Ping-sweep the subnet and add live hosts as pending |
 | PUT    | /prefixes/:id         | admin | Update prefix          |
 | DELETE | /prefixes/:id         | admin | Delete prefix          |
 | GET    | /addresses            | read  | List IP addresses      |

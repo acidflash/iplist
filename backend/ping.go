@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"net"
 	"net/http"
 	"os/exec"
@@ -68,22 +67,27 @@ func PingPrefix(addrRepo *AddressRepo) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
+			respondError(w, http.StatusBadRequest, "invalid id")
 			return
 		}
 
 		addrs, err := addrRepo.List(&id, "")
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			respondError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
+		// Cap concurrency so a large prefix can't spawn thousands of
+		// simultaneous ping processes.
 		results := make([]PingResult, len(addrs))
+		sem := make(chan struct{}, 100)
 		var wg sync.WaitGroup
 		for i, a := range addrs {
 			wg.Add(1)
 			go func(i int, a IPAddress) {
 				defer wg.Done()
+				sem <- struct{}{}
+				defer func() { <-sem }()
 				results[i] = PingResult{
 					AddressID: a.ID,
 					Address:   a.Address,
@@ -93,8 +97,7 @@ func PingPrefix(addrRepo *AddressRepo) http.HandlerFunc {
 		}
 		wg.Wait()
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(results)
+		respondJSON(w, http.StatusOK, results)
 	}
 }
 
@@ -102,23 +105,23 @@ func DiscoverPrefix(prefixRepo *PrefixRepo, addrRepo *AddressRepo) http.HandlerF
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
+			respondError(w, http.StatusBadRequest, "invalid id")
 			return
 		}
 
 		prefix, err := prefixRepo.GetByID(id)
 		if err != nil || prefix == nil {
-			http.Error(w, "prefix not found", http.StatusNotFound)
+			respondError(w, http.StatusNotFound, "prefix not found")
 			return
 		}
 
 		ips := enumerateCIDR(prefix.Prefix)
 		if len(ips) == 0 {
-			http.Error(w, "could not enumerate addresses", http.StatusBadRequest)
+			respondError(w, http.StatusBadRequest, "could not enumerate addresses")
 			return
 		}
 		if len(ips) > 2046 {
-			http.Error(w, "subnet too large — max /21 (2046 hosts)", http.StatusBadRequest)
+			respondError(w, http.StatusBadRequest, "subnet too large — max /21 (2046 hosts)")
 			return
 		}
 
@@ -184,8 +187,7 @@ func DiscoverPrefix(prefixRepo *PrefixRepo, addrRepo *AddressRepo) http.HandlerF
 			}
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(DiscoverResponse{
+		respondJSON(w, http.StatusOK, DiscoverResponse{
 			Added:   added,
 			Updated: updated,
 			Alive:   alive,

@@ -97,7 +97,7 @@ export function PrefixDetail() {
       setDiscoverResult(res)
       await load()
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: string } })?.response?.data || 'Något gick fel'
+      const msg = (err as { response?: { data?: string } })?.response?.data || t.common.somethingWentWrong
       alert(msg)
     } finally {
       setDiscovering(false)
@@ -115,7 +115,7 @@ export function PrefixDetail() {
   }
 
   if (!prefix) return (
-    <div className="p-6" style={{ color: 'var(--c-text-3)', fontSize: '14px' }}>Laddar…</div>
+    <div className="p-6" style={{ color: 'var(--c-text-3)', fontSize: '14px' }}>{t.common.loading}</div>
   )
 
   const addresses = prefix.addresses ?? []
@@ -168,8 +168,8 @@ export function PrefixDetail() {
                 VLAN {prefix.vlan.vid} · {prefix.vlan.name}
               </span>
             )}
-            <span>{prefix.total_ips} IP-adresser totalt</span>
-            <span>{prefix.used_ips} använda</span>
+            <span>{prefix.total_ips} {t.prefixDetail.ipsTotal}</span>
+            <span>{prefix.used_ips} {t.prefixDetail.ipsUsed}</span>
             {prefix.total_ips > 0 && (
               <span style={{ color: 'var(--c-text-3)' }}>
                 {prefix.total_ips - prefix.used_ips} {t.prefixDetail.free}
@@ -208,7 +208,7 @@ export function PrefixDetail() {
             <table className="w-full border-collapse">
               <thead>
                 <tr style={{ background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)' }}>
-                  {['Prefix', 'Namn', 'VLAN', 'Status', t.prefixes.colUtil].map(h => (
+                  {['Prefix', t.common.name, 'VLAN', t.common.status, t.prefixes.colUtil].map(h => (
                     <th key={h} className="px-4 py-2.5 text-left font-medium"
                       style={{ fontSize: '12px', color: 'var(--c-text-3)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                       {h}
@@ -262,7 +262,7 @@ export function PrefixDetail() {
                 style={{ opacity: discovering ? 0.5 : 1 }}
               >
                 <span style={{ width: 8, height: 8, borderRadius: '50%', background: discovering ? 'var(--c-warning)' : 'var(--c-purple)', display: 'inline-block' }} />
-                {discovering ? 'Skannar…' : 'Skanna subnät'}
+                {discovering ? t.prefixDetail.scanning : t.prefixDetail.scanSubnet}
               </button>
             )}
             <button
@@ -272,7 +272,7 @@ export function PrefixDetail() {
               style={{ opacity: pinging || addresses.length === 0 ? 0.5 : 1 }}
             >
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: pinging ? 'var(--c-warning)' : 'var(--c-success)', display: 'inline-block' }} />
-              {pinging ? 'Pingar…' : 'Pinga alla'}
+              {pinging ? t.prefixDetail.pinging : t.prefixDetail.pingAll}
             </button>
             {isAdmin && (
               <button onClick={openCreate} className="btn-primary flex items-center gap-1.5">
@@ -285,13 +285,13 @@ export function PrefixDetail() {
         {discoverResult && (
           <div className="mb-2 px-3 py-2 rounded-md flex items-center gap-3" style={{ fontSize: '13px', background: 'oklch(62% 0.20 258 / 0.08)', border: '1px solid oklch(62% 0.20 258 / 0.25)' }}>
             <span style={{ color: 'var(--c-text-2)' }}>
-              Skannade <strong style={{ color: 'var(--c-text)' }}>{discoverResult.total}</strong> adresser —{' '}
-              <strong style={{ color: 'var(--c-success)' }}>{discoverResult.alive}</strong> svarade,{' '}
-              <strong style={{ color: 'var(--c-accent)' }}>{discoverResult.added}</strong> nya tillagda som <em>väntande</em>
-              {discoverResult.updated > 0 && <>, <strong style={{ color: 'var(--c-accent)' }}>{discoverResult.updated}</strong> PTR uppdaterade</>}
+              {t.prefixDetail.discoverScanned} <strong style={{ color: 'var(--c-text)' }}>{discoverResult.total}</strong> {t.prefixDetail.discoverAddresses} —{' '}
+              <strong style={{ color: 'var(--c-success)' }}>{discoverResult.alive}</strong> {t.prefixDetail.discoverResponded},{' '}
+              <strong style={{ color: 'var(--c-accent)' }}>{discoverResult.added}</strong> {t.prefixDetail.discoverAddedPending}
+              {discoverResult.updated > 0 && <>, <strong style={{ color: 'var(--c-accent)' }}>{discoverResult.updated}</strong> {t.prefixDetail.discoverPtrUpdated}</>}
               {discoverResult.errors && discoverResult.errors.length > 0 && (
                 <details style={{ marginTop: 4 }}>
-                  <summary style={{ cursor: 'pointer', color: 'var(--c-danger)', fontSize: '12px' }}>{discoverResult.errors.length} fel</summary>
+                  <summary style={{ cursor: 'pointer', color: 'var(--c-danger)', fontSize: '12px' }}>{t.prefixDetail.discoverErrors(discoverResult.errors.length)}</summary>
                   <pre style={{ fontSize: '11px', color: 'var(--c-danger)', marginTop: 4, whiteSpace: 'pre-wrap' }}>{discoverResult.errors.join('\n')}</pre>
                 </details>
               )}
@@ -304,7 +304,7 @@ export function PrefixDetail() {
           <table className="w-full border-collapse">
             <thead>
               <tr style={{ background: 'var(--c-surface)', borderBottom: '1px solid var(--c-border)' }}>
-                {[t.prefixDetail.ipAddress, t.prefixDetail.hostname, t.prefixDetail.dnsName, 'Beskrivning', 'Status', ''].map(h => (
+                {[t.prefixDetail.ipAddress, t.prefixDetail.hostname, t.prefixDetail.dnsName, t.common.description, t.common.status, ''].map(h => (
                   <th key={h} className="px-4 py-2.5 text-left font-medium"
                     style={{ fontSize: '12px', color: 'var(--c-text-3)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                     {h}
@@ -329,12 +329,16 @@ export function PrefixDetail() {
                   <td className="px-4 py-2.5">
                     <div className="flex items-center gap-2">
                       {pingMap.size > 0 && (
-                        <span style={{
-                          width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
-                          background: pingMap.has(a.id)
-                            ? (pingMap.get(a.id) ? 'var(--c-success)' : 'var(--c-danger)')
-                            : 'var(--c-text-3)',
-                        }} />
+                        <span
+                          title={pingMap.has(a.id)
+                            ? (pingMap.get(a.id) ? t.prefixDetail.pingAlive : t.prefixDetail.pingDead)
+                            : t.prefixDetail.pingUnknown}
+                          style={{
+                            width: 7, height: 7, borderRadius: '50%', flexShrink: 0,
+                            background: pingMap.has(a.id)
+                              ? (pingMap.get(a.id) ? 'var(--c-success)' : 'var(--c-danger)')
+                              : 'var(--c-text-3)',
+                          }} />
                       )}
                       <code className="font-ip" style={{ fontSize: '13.5px', color: 'var(--c-accent)' }}>{a.address}</code>
                     </div>
@@ -389,13 +393,13 @@ export function PrefixDetail() {
               </div>
             </div>
             <div>
-              <label className="lbl">Beskrivning</label>
+              <label className="lbl">{t.common.description}</label>
               <input type="text" value={form.description}
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                 className="ctrl" />
             </div>
             <div>
-              <label className="lbl">Status</label>
+              <label className="lbl">{t.common.status}</label>
               <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as Status }))}
                 className="ctrl">
                 <option value="active">{t.status.active}</option>
@@ -622,7 +626,7 @@ function SubnetCalculator({
               <table className="w-full border-collapse">
                 <thead>
                   <tr style={{ background: 'var(--c-base)', borderBottom: '1px solid var(--c-border)' }}>
-                    {[t.prefixDetail.colSubnet, isIPv6 ? t.prefixDetail.colHosts : t.prefixDetail.colHostsUsable, 'Status', ''].map(h => (
+                    {[t.prefixDetail.colSubnet, isIPv6 ? t.prefixDetail.colHosts : t.prefixDetail.colHostsUsable, t.common.status, ''].map(h => (
                       <th key={h} className="px-4 py-2 text-left font-medium"
                         style={{ fontSize: '11.5px', color: 'var(--c-text-3)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                         {h}
@@ -698,14 +702,14 @@ function SubnetCalculator({
               />
             </div>
             <div>
-              <label className="lbl">Namn</label>
-              <input type="text" placeholder="Kontor Stockholm"
+              <label className="lbl">{t.common.name}</label>
+              <input type="text" placeholder={t.prefixDetail.namePlaceholder}
                 value={createForm.name}
                 onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))}
                 className="ctrl" autoFocus />
             </div>
             <div>
-              <label className="lbl">Beskrivning</label>
+              <label className="lbl">{t.common.description}</label>
               <textarea rows={2}
                 value={createForm.description}
                 onChange={e => setCreateForm(f => ({ ...f, description: e.target.value }))}
@@ -713,7 +717,7 @@ function SubnetCalculator({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="lbl">Status</label>
+                <label className="lbl">{t.common.status}</label>
                 <select value={createForm.status}
                   onChange={e => setCreateForm(f => ({ ...f, status: e.target.value as Status }))}
                   className="ctrl">

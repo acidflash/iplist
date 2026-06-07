@@ -24,6 +24,11 @@ export interface Translations {
     auto: string
     /** Label marking the currently logged-in user */
     you: string
+    /** Generic form labels reused across pages */
+    name: string
+    description: string
+    status: string
+    loading: string
     somethingWentWrong: string
     confirmDelete: (what: string) => string
   }
@@ -62,6 +67,7 @@ export interface Translations {
     title: string
     ipAddresses: string
     utilization: string
+    utilizationHint: string
     highUtil: string
     noHighUtil: string
     recent: string
@@ -128,7 +134,27 @@ export interface Translations {
     ipAddress: string
     hostname: string
     dnsName: string
+    namePlaceholder: string
     confirmDeleteAddr: (addr: string) => string
+
+    // Header IP totals
+    ipsTotal: string
+    ipsUsed: string
+
+    // Ping / discover
+    pingAll: string
+    pinging: string
+    scanSubnet: string
+    scanning: string
+    discoverScanned: string
+    discoverAddresses: string
+    discoverResponded: string
+    discoverAddedPending: string
+    discoverPtrUpdated: string
+    discoverErrors: (n: number) => string
+    pingAlive: string
+    pingDead: string
+    pingUnknown: string
   }
 
   vlans: {

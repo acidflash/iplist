@@ -176,7 +176,7 @@ export function VLANs() {
                 onChange={e => setForm(f => ({ ...f, description: e.target.value }))} className="ctrl" />
             </div>
             <div>
-              <label className="lbl">Status</label>
+              <label className="lbl">{t.common.status}</label>
               <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as Status }))} className="ctrl">
                 <option value="active">{t.status.active}</option>
                 <option value="reserved">{t.status.reserved}</option>
