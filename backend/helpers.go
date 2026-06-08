@@ -25,6 +25,11 @@ func ipNetTotalSize(cidr string) int64 {
 	}
 	ones, bits := ipNet.Mask.Size()
 	hostBits := bits - ones
+	if hostBits >= 63 {
+		// Larger than int64 can hold (huge IPv6 range); treat as uncountable
+		// so callers simply don't show a utilization figure.
+		return 0
+	}
 	size := int64(1) << hostBits
 	ip, _, _ := net.ParseCIDR(cidr)
 	if ip.To4() != nil && ones < 31 {

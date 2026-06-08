@@ -38,9 +38,17 @@ func ptrLookup(ip string) string {
 	return strings.TrimSuffix(names[0], ".")
 }
 
+// maxEnumerableHosts caps enumerateCIDR so a huge range (especially IPv6)
+// can't allocate an unbounded slice and exhaust memory. Callers that surface
+// a friendlier error should guard on prefix size before calling.
+const maxEnumerableHosts = 1 << 16
+
 func enumerateCIDR(cidr string) []string {
 	_, network, err := net.ParseCIDR(cidr)
 	if err != nil {
+		return nil
+	}
+	if ones, bits := network.Mask.Size(); bits-ones > 16 {
 		return nil
 	}
 	ip := make(net.IP, len(network.IP))
@@ -48,6 +56,9 @@ func enumerateCIDR(cidr string) []string {
 
 	var ips []string
 	for network.Contains(ip) {
+		if len(ips) >= maxEnumerableHosts {
+			return nil
+		}
 		ips = append(ips, ip.String())
 		for i := len(ip) - 1; i >= 0; i-- {
 			ip[i]++
@@ -115,13 +126,20 @@ func DiscoverPrefix(prefixRepo *PrefixRepo, addrRepo *AddressRepo) http.HandlerF
 			return
 		}
 
+		// Guard on prefix size *before* enumerating: a large range (especially
+		// an IPv6 prefix) would otherwise try to allocate billions of entries
+		// and exhaust memory. >11 host bits means more than 2048 addresses.
+		if _, network, err := net.ParseCIDR(prefix.Prefix); err != nil {
+			respondError(w, http.StatusBadRequest, "could not enumerate addresses")
+			return
+		} else if ones, bits := network.Mask.Size(); bits-ones > 11 {
+			respondError(w, http.StatusBadRequest, "subnet too large — max 2046 hosts (e.g. IPv4 /21)")
+			return
+		}
+
 		ips := enumerateCIDR(prefix.Prefix)
 		if len(ips) == 0 {
 			respondError(w, http.StatusBadRequest, "could not enumerate addresses")
-			return
-		}
-		if len(ips) > 2046 {
-			respondError(w, http.StatusBadRequest, "subnet too large — max /21 (2046 hosts)")
 			return
 		}
 
@@ -166,11 +184,14 @@ func DiscoverPrefix(prefixRepo *PrefixRepo, addrRepo *AddressRepo) http.HandlerF
 			alive++
 			if known, ok := globalByIP[res.ip]; ok {
 				if known.DNSName == "" && res.ptr != "" {
-					addrRepo.db.Exec(
+					if _, err := addrRepo.db.Exec(
 						"UPDATE ip_addresses SET dns_name=?, updated_at=? WHERE id=?",
 						res.ptr, time.Now(), known.ID,
-					)
-					updated++
+					); err != nil {
+						errs = append(errs, res.ip+": "+err.Error())
+					} else {
+						updated++
+					}
 				}
 			} else {
 				_, err := addrRepo.Create(addressRequest{

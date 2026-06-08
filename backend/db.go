@@ -2,6 +2,8 @@ package main
 
 import (
 	"database/sql"
+	"log"
+	"os"
 
 	_ "modernc.org/sqlite"
 )
@@ -173,7 +175,17 @@ func seedDefaultUsers(db *sql.DB) error {
 		return nil
 	}
 	repo := NewUserRepo(db)
-	if _, err := repo.Create("admin", "admin", "admin"); err != nil {
+
+	// Initial admin password: prefer ADMIN_PASSWORD so a deployment never has
+	// to ship with a guessable default. Fall back to "admin" but warn loudly.
+	adminPw := os.Getenv("ADMIN_PASSWORD")
+	if adminPw == "" {
+		adminPw = "admin"
+		log.Println("WARNING: no users found — creating default 'admin' user with " +
+			"password \"admin\". Change it immediately after logging in, or set " +
+			"ADMIN_PASSWORD before first start.")
+	}
+	if _, err := repo.Create("admin", adminPw, "admin"); err != nil {
 		return err
 	}
 	_, err := repo.Create("reader", "reader", "read")
