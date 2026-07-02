@@ -8,10 +8,17 @@ function download(content: string, filename: string, mime: string) {
   URL.revokeObjectURL(url)
 }
 
+// Cells starting with =, +, -, @, tab, or CR are interpreted as formulas by
+// Excel/Sheets when the CSV is opened. Prefix with a quote to neutralize
+// spreadsheet formula injection from untrusted field values (e.g. hostname).
+function escapeFormula(s: string): string {
+  return /^[=+\-@\t\r]/.test(s) ? `'${s}` : s
+}
+
 function csvRow(values: (string | number | null | undefined)[]) {
   return values
     .map(v => {
-      const s = v == null ? '' : String(v)
+      const s = escapeFormula(v == null ? '' : String(v))
       return s.includes(',') || s.includes('"') || s.includes('\n')
         ? `"${s.replace(/"/g, '""')}"`
         : s
