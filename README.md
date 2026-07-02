@@ -84,8 +84,9 @@ The app is available at [http://localhost:8080](http://localhost:8080). Change `
 
 | Username | Password | Role  |
 |----------|----------|-------|
-| admin    | admin    | Admin |
-| reader   | reader   | Read  |
+| admin    | admin (or `ADMIN_PASSWORD` if set) | Admin |
+
+A read-only `reader` account is created only if `READER_PASSWORD` is set on first start.
 
 ---
 

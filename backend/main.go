@@ -4,10 +4,12 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/go-chi/httprate"
 )
 
 func main() {
@@ -66,8 +68,12 @@ func main() {
 	}))
 
 	r.Route("/api/v1", func(r chi.Router) {
-		// Public
-		r.Post("/auth/login", LoginHandler(userRepo))
+		// Public. Rate-limited per client IP so credentials can't be
+		// brute-forced; bcrypt slows each attempt but nothing else caps them.
+		r.Group(func(r chi.Router) {
+			r.Use(httprate.Limit(10, time.Minute, httprate.WithKeyFuncs(clientIPKey)))
+			r.Post("/auth/login", LoginHandler(userRepo))
+		})
 
 		// All authenticated users
 		r.Group(func(r chi.Router) {
@@ -141,8 +147,27 @@ func main() {
 		})
 	})
 
+	srv := &http.Server{
+		Addr:              ":" + appCfg.Port,
+		Handler:           r,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		// Ping/discover sweeps over a full /21 run for minutes.
+		WriteTimeout: 3 * time.Minute,
+		IdleTimeout:  2 * time.Minute,
+	}
 	log.Printf("Server starting on :%s", appCfg.Port)
-	if err := http.ListenAndServe(":"+appCfg.Port, r); err != nil {
+	if err := srv.ListenAndServe(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+// clientIPKey rate-limits by the real client IP. Behind the bundled nginx
+// proxy every connection shares nginx's RemoteAddr, so all clients would
+// otherwise share one bucket; nginx forwards the caller in X-Real-IP.
+func clientIPKey(r *http.Request) (string, error) {
+	if ip := r.Header.Get("X-Real-IP"); ip != "" {
+		return ip, nil
+	}
+	return httprate.KeyByIP(r)
 }

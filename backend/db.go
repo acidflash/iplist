@@ -188,6 +188,14 @@ func seedDefaultUsers(db *sql.DB) error {
 	if _, err := repo.Create("admin", adminPw, "admin"); err != nil {
 		return err
 	}
-	_, err := repo.Create("reader", "reader", "read")
-	return err
+
+	// The read-only account is only created when a password is explicitly
+	// provided — a well-known reader/reader login would silently expose the
+	// whole IP plan.
+	if readerPw := os.Getenv("READER_PASSWORD"); readerPw != "" {
+		if _, err := repo.Create("reader", readerPw, "read"); err != nil {
+			return err
+		}
+	}
+	return nil
 }

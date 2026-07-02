@@ -97,7 +97,7 @@ export function PrefixDetail() {
       setDiscoverResult(res)
       await load()
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: string } })?.response?.data || t.common.somethingWentWrong
+      const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error || t.common.somethingWentWrong
       alert(msg)
     } finally {
       setDiscovering(false)

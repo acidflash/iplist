@@ -195,6 +195,10 @@ func DeleteUser(repo *UserRepo) http.HandlerFunc {
 			respondError(w, http.StatusBadRequest, "invalid id")
 			return
 		}
+		if claims, ok := r.Context().Value(ctxUser).(*userClaims); ok && claims.UserID == id {
+			respondError(w, http.StatusBadRequest, "cannot delete the currently logged-in user")
+			return
+		}
 		if err := repo.Delete(id); err != nil {
 			respondError(w, http.StatusBadRequest, err.Error())
 			return
