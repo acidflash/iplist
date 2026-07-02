@@ -11,6 +11,7 @@ A self-hosted IP Address Management (IPAM) tool for tracking VLANs, IP prefixes,
 - **Role-based access control** — `admin` (full access) and `read` (read-only) roles with JWT authentication
 - **Data export** — download any list as CSV, JSON, or YAML
 - **CSV import** — bulk-import VLANs, prefixes, and IP addresses from CSV files; partial success with per-row error reporting
+- **Backup & restore** — download the entire database (including users) as a JSON file and restore it atomically from the admin UI
 - **Ping sweep** — ping all IP addresses in a prefix to see which ones are alive
 - **Numeric IP sorting** — addresses sorted correctly by numeric value, not lexicographically
 - **Dark UI** — monospace-accented dark theme
@@ -171,6 +172,8 @@ The REST API is available under `/api/v1/`. All endpoints except `POST /auth/log
 | POST   | /users                | admin | Create user            |
 | PUT    | /users/:id            | admin | Update user            |
 | DELETE | /users/:id            | admin | Delete user            |
+| GET    | /backup               | admin | Download full database backup as JSON |
+| POST   | /restore              | admin | Restore database from a backup file (replaces all data) |
 
 ## License
 

@@ -8,6 +8,7 @@ import { PrefixDetail } from './pages/PrefixDetail'
 import { VLANs } from './pages/VLANs'
 import { Addresses } from './pages/Addresses'
 import { Users } from './pages/Users'
+import { Backup } from './pages/Backup'
 
 function ProtectedRoutes() {
   const { auth } = useAuth()
@@ -21,6 +22,7 @@ function ProtectedRoutes() {
         <Route path="vlans" element={<VLANs />} />
         <Route path="addresses" element={<Addresses />} />
         <Route path="users" element={<Users />} />
+        <Route path="backup" element={<Backup />} />
       </Route>
     </Routes>
   )

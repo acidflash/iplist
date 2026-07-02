@@ -48,6 +48,7 @@ export interface Translations {
     vlans: string
     addresses: string
     users: string
+    backup: string
     logout: string
     admin: string
     reader: string
@@ -204,6 +205,23 @@ export interface Translations {
     rowError: (row: number, err: string) => string
     downloadExample: string
     done: string
+  }
+
+  backup: {
+    title: string
+    downloadTitle: string
+    /** Explains what the backup file contains */
+    downloadDesc: string
+    downloadBtn: string
+    restoreTitle: string
+    /** Warning that restore replaces ALL data */
+    restoreDesc: string
+    chooseFile: string
+    restoreBtn: string
+    restoring: string
+    /** Native confirm() text shown before a restore is executed */
+    confirmRestore: string
+    restoredSummary: (vlans: number, prefixes: number, addresses: number, users: number) => string
   }
 
   users: {

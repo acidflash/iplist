@@ -33,6 +33,7 @@ const sv: Translations = {
     vlans: 'VLAN',
     addresses: 'Adresser',
     users: 'Användare',
+    backup: 'Backup',
     logout: 'Logga ut',
     admin: 'Admin',
     reader: 'Läsare',
@@ -184,6 +185,21 @@ const sv: Translations = {
     rowError: (row, err) => `Rad ${row}: ${err}`,
     downloadExample: 'Ladda ned exempelfil',
     done: 'Klar',
+  },
+
+  backup: {
+    title: 'Backup & återställning',
+    downloadTitle: 'Ladda ned backup',
+    downloadDesc: 'Exporterar hela databasen — VLAN, prefix, IP-adresser och användare (inklusive lösenordshashar) — som en JSON-fil.',
+    downloadBtn: 'Ladda ned backup',
+    restoreTitle: 'Återställ från backup',
+    restoreDesc: 'Ersätter ALL nuvarande data med innehållet i backupfilen. Detta går inte att ångra.',
+    chooseFile: 'Välj backupfil…',
+    restoreBtn: 'Återställ',
+    restoring: 'Återställer…',
+    confirmRestore: 'Detta ersätter ALL data i databasen med innehållet i backupfilen. Det går inte att ångra. Fortsätt?',
+    restoredSummary: (vlans, prefixes, addresses, users) =>
+      `Återställt: ${vlans} VLAN, ${prefixes} prefix, ${addresses} adresser, ${users} användare`,
   },
 
   users: {

@@ -143,6 +143,9 @@ func main() {
 				r.Post("/users", CreateUser(userRepo))
 				r.Put("/users/{id}", UpdateUser(userRepo))
 				r.Delete("/users/{id}", DeleteUser(userRepo))
+
+				r.Get("/backup", BackupHandler(db))
+				r.Post("/restore", RestoreHandler(db))
 			})
 		})
 	})

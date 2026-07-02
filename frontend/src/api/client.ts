@@ -83,6 +83,26 @@ export const updateUser = (id: number, data: { password?: string; role?: string 
   api.put(`/users/${id}`, data)
 export const deleteUser = (id: number) => api.delete(`/users/${id}`)
 
+// Backup / restore
+export interface RestoreResult { vlans: number; prefixes: number; addresses: number; users: number }
+
+export const downloadBackup = () =>
+  api.get('/backup', { responseType: 'blob' }).then(r => {
+    const url = URL.createObjectURL(r.data as Blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `iplist_backup_${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  })
+
+export const restoreBackup = async (file: File) => {
+  const text = await file.text()
+  return api.post<RestoreResult>('/restore', text, {
+    headers: { 'Content-Type': 'application/json' },
+  }).then(r => r.data)
+}
+
 // Ping
 export interface PingResult { address_id: number; address: string; alive: boolean }
 export const pingPrefix = (id: number) => api.get<PingResult[]>(`/prefixes/${id}/ping`).then(r => r.data)

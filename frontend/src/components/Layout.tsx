@@ -1,5 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, Network, Layers, Server, Users, LogOut } from 'lucide-react'
+import { LayoutDashboard, Network, Layers, Server, Users, LogOut, DatabaseBackup } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { LogoMark } from './Logo'
 import { useT, langs } from '../i18n'
@@ -13,7 +13,10 @@ export function Layout() {
     { to: '/prefixes', label: t.nav.prefixes, icon: Network, end: false },
     { to: '/vlans', label: t.nav.vlans, icon: Layers, end: false },
     { to: '/addresses', label: t.nav.addresses, icon: Server, end: false },
-    ...(isAdmin ? [{ to: '/users', label: t.nav.users, icon: Users, end: false }] : []),
+    ...(isAdmin ? [
+      { to: '/users', label: t.nav.users, icon: Users, end: false },
+      { to: '/backup', label: t.nav.backup, icon: DatabaseBackup, end: false },
+    ] : []),
   ]
 
   return (

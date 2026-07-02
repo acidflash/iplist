@@ -33,6 +33,7 @@ const en: Translations = {
     vlans: 'VLANs',
     addresses: 'Addresses',
     users: 'Users',
+    backup: 'Backup',
     logout: 'Log out',
     admin: 'Admin',
     reader: 'Reader',
@@ -184,6 +185,21 @@ const en: Translations = {
     rowError: (row, err) => `Row ${row}: ${err}`,
     downloadExample: 'Download example file',
     done: 'Done',
+  },
+
+  backup: {
+    title: 'Backup & restore',
+    downloadTitle: 'Download backup',
+    downloadDesc: 'Exports the entire database — VLANs, prefixes, IP addresses and users (including password hashes) — as a JSON file.',
+    downloadBtn: 'Download backup',
+    restoreTitle: 'Restore from backup',
+    restoreDesc: 'Replaces ALL current data with the contents of the backup file. This cannot be undone.',
+    chooseFile: 'Choose backup file…',
+    restoreBtn: 'Restore',
+    restoring: 'Restoring…',
+    confirmRestore: 'This will replace ALL data in the database with the contents of the backup file. It cannot be undone. Continue?',
+    restoredSummary: (vlans, prefixes, addresses, users) =>
+      `Restored: ${vlans} VLANs, ${prefixes} prefixes, ${addresses} addresses, ${users} users`,
   },
 
   users: {
