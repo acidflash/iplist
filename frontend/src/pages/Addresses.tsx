@@ -4,6 +4,7 @@ import { Plus, Pencil, Trash2, Server, Upload } from 'lucide-react'
 import { getAddresses, createAddress, updateAddress, deleteAddress, getPrefixes, importAddresses } from '../api/client'
 import type { IPAddress, Prefix, Status } from '../types'
 import { Modal } from '../components/Modal'
+import { ErrorBanner } from '../components/ErrorBanner'
 import { ImportModal } from '../components/ImportModal'
 import { StatusBadge } from '../components/StatusBadge'
 import { ExportMenu } from '../components/ExportMenu'
@@ -29,14 +30,19 @@ export function Addresses() {
   const [filterPrefix, setFilterPrefix] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [search, setSearch] = useState('')
+  const [loadError, setLoadError] = useState('')
 
   const load = useCallback(async () => {
-    const params: { prefix_id?: number; status?: string } = {}
-    if (filterPrefix) params.prefix_id = parseInt(filterPrefix)
-    if (filterStatus) params.status = filterStatus
-    const [a, p] = await Promise.all([getAddresses(params), getPrefixes()])
-    setAddresses(a); setPrefixes(p)
-  }, [filterPrefix, filterStatus])
+    try {
+      const params: { prefix_id?: number; status?: string } = {}
+      if (filterPrefix) params.prefix_id = parseInt(filterPrefix)
+      if (filterStatus) params.status = filterStatus
+      const [a, p] = await Promise.all([getAddresses(params), getPrefixes()])
+      setAddresses(a); setPrefixes(p); setLoadError('')
+    } catch (err) {
+      setLoadError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || t.common.somethingWentWrong)
+    }
+  }, [filterPrefix, filterStatus, t])
 
   useEffect(() => { load() }, [load])
 
@@ -94,6 +100,8 @@ export function Addresses() {
           )}
         </div>
       </div>
+
+      {loadError && <ErrorBanner message={loadError} onRetry={load} />}
 
       <div className="flex gap-2.5 mb-4 flex-wrap items-center">
         <input type="text" placeholder={t.addresses.searchPlaceholder} value={search}

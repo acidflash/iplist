@@ -29,15 +29,22 @@ type prefixRequest struct {
 }
 
 func (r *PrefixRepo) findBestParent(cidr string, excludeID *int64) (*int64, error) {
-	ip, _, err := net.ParseCIDR(cidr)
+	candidates, err := r.listCandidates(excludeID)
 	if err != nil {
 		return nil, err
 	}
+	return findBestParentAmong(cidr, candidates)
+}
 
-	query := "SELECT id, prefix FROM prefixes WHERE prefix != ?"
-	args := []any{cidr}
+// listCandidates loads all prefixes as (id, prefix) pairs, optionally
+// excluding one row by id. Callers doing many lookups in a row (e.g. CSV
+// import) should call this once and reuse the result via
+// findBestParentAmong instead of re-querying per row.
+func (r *PrefixRepo) listCandidates(excludeID *int64) ([]prefixCandidate, error) {
+	query := "SELECT id, prefix FROM prefixes"
+	args := []any{}
 	if excludeID != nil {
-		query += " AND id != ?"
+		query += " WHERE id != ?"
 		args = append(args, *excludeID)
 	}
 
@@ -47,16 +54,30 @@ func (r *PrefixRepo) findBestParent(cidr string, excludeID *int64) (*int64, erro
 	}
 	defer rows.Close()
 
-	var bestID *int64
-	bestOnes := -1
-
+	var candidates []prefixCandidate
 	for rows.Next() {
-		var id int64
-		var prefix string
-		if err := rows.Scan(&id, &prefix); err != nil {
+		var c prefixCandidate
+		if err := rows.Scan(&c.ID, &c.Prefix); err != nil {
 			continue
 		}
-		_, network, err := net.ParseCIDR(prefix)
+		candidates = append(candidates, c)
+	}
+	return candidates, nil
+}
+
+func findBestParentAmong(cidr string, candidates []prefixCandidate) (*int64, error) {
+	ip, _, err := net.ParseCIDR(cidr)
+	if err != nil {
+		return nil, err
+	}
+
+	var bestID *int64
+	bestOnes := -1
+	for _, c := range candidates {
+		if c.Prefix == cidr {
+			continue
+		}
+		_, network, err := net.ParseCIDR(c.Prefix)
 		if err != nil {
 			continue
 		}
@@ -64,12 +85,11 @@ func (r *PrefixRepo) findBestParent(cidr string, excludeID *int64) (*int64, erro
 			ones, _ := network.Mask.Size()
 			if ones > bestOnes {
 				bestOnes = ones
-				tmp := id
-				bestID = &tmp
+				id := c.ID
+				bestID = &id
 			}
 		}
 	}
-
 	return bestID, nil
 }
 
@@ -255,6 +275,37 @@ func (r *PrefixRepo) Create(req prefixRequest) (*Prefix, error) {
 		}
 	}
 
+	return r.insert(cidr, req, parentID)
+}
+
+// CreateBatch is like Create but resolves the parent by longest-prefix-match
+// against an in-memory candidate set instead of re-querying the whole
+// prefixes table, and appends the newly created row to candidates so later
+// calls in the same batch can nest under it. Intended for CSV import, where
+// calling Create per row would scan the full prefixes table per row.
+func (r *PrefixRepo) CreateBatch(req prefixRequest, candidates *[]prefixCandidate) (*Prefix, error) {
+	cidr, err := normalizeCIDR(req.Prefix)
+	if err != nil {
+		return nil, fmt.Errorf("invalid CIDR: %s", req.Prefix)
+	}
+
+	parentID := req.ParentID
+	if parentID == nil {
+		parentID, err = findBestParentAmong(cidr, *candidates)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	p, err := r.insert(cidr, req, parentID)
+	if err != nil {
+		return nil, err
+	}
+	*candidates = append(*candidates, prefixCandidate{ID: p.ID, Prefix: p.Prefix})
+	return p, nil
+}
+
+func (r *PrefixRepo) insert(cidr string, req prefixRequest, parentID *int64) (*Prefix, error) {
 	if req.Status == "" {
 		req.Status = "active"
 	}

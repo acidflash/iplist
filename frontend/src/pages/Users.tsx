@@ -3,6 +3,7 @@ import { Plus, Pencil, Trash2, Users as UsersIcon, ShieldCheck, Eye } from 'luci
 import { getUsers, createUser, updateUser, deleteUser, type UserData } from '../api/client'
 import { useAuth } from '../context/AuthContext'
 import { Modal } from '../components/Modal'
+import { ErrorBanner } from '../components/ErrorBanner'
 import { useT } from '../i18n'
 
 interface CreateForm { username: string; password: string; role: string }
@@ -17,8 +18,15 @@ export function Users() {
   const [createForm, setCreateForm] = useState<CreateForm>({ username: '', password: '', role: 'read' })
   const [editForm, setEditForm] = useState<EditForm>({ password: '', role: 'read' })
   const [error, setError] = useState('')
+  const [loadError, setLoadError] = useState('')
 
-  const load = useCallback(async () => { setUsers(await getUsers()) }, [])
+  const load = useCallback(async () => {
+    try {
+      setUsers(await getUsers()); setLoadError('')
+    } catch (err) {
+      setLoadError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || t.common.somethingWentWrong)
+    }
+  }, [t])
   useEffect(() => { load() }, [load])
 
   const openCreate = () => { setCreateForm({ username: '', password: '', role: 'read' }); setError(''); setShowCreate(true) }
@@ -55,6 +63,8 @@ export function Users() {
           <Plus size={14} /> {t.common.add}
         </button>
       </div>
+
+      {loadError && <ErrorBanner message={loadError} onRetry={load} />}
 
       <div className="rounded-lg overflow-hidden" style={{ border: '1px solid var(--c-border-sub)' }}>
         <table className="w-full border-collapse">

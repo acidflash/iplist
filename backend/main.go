@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"net/http"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -159,9 +162,31 @@ func main() {
 		WriteTimeout: 3 * time.Minute,
 		IdleTimeout:  2 * time.Minute,
 	}
-	log.Printf("Server starting on :%s", appCfg.Port)
-	if err := srv.ListenAndServe(); err != nil {
-		log.Fatal(err)
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
+	serveErr := make(chan error, 1)
+	go func() {
+		log.Printf("Server starting on :%s", appCfg.Port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			serveErr <- err
+		}
+		close(serveErr)
+	}()
+
+	select {
+	case err := <-serveErr:
+		if err != nil {
+			log.Fatal(err)
+		}
+	case <-ctx.Done():
+		stop()
+		log.Println("Shutting down...")
+		shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := srv.Shutdown(shutdownCtx); err != nil {
+			log.Printf("Graceful shutdown failed: %v", err)
+		}
 	}
 }
 

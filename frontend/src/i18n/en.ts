@@ -17,6 +17,7 @@ const en: Translations = {
     loading: 'Loading…',
     somethingWentWrong: 'Something went wrong',
     confirmDelete: (what) => `Are you sure you want to delete ${what}?`,
+    retry: 'Retry',
   },
 
   status: {
@@ -76,6 +77,15 @@ const en: Translations = {
     parentPrefix: 'Parent prefix',
     parentAuto: 'Automatic',
     confirmDelete: (cidr) => `Are you sure you want to delete ${cidr}?`,
+  },
+
+  cidrErrors: {
+    prefixLenIPv4: 'Prefix length must be 0–32',
+    prefixLenIPv6: 'Prefix length must be 0–128',
+    invalidIPv4: 'Invalid IPv4 address',
+    invalidIPv6: 'Invalid IPv6 address',
+    invalidFormat: 'Invalid CIDR format',
+    hostBitsSet: (suggestion) => `Host bits are set — did you mean ${suggestion}?`,
   },
 
   prefixDetail: {

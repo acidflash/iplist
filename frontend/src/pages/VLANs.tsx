@@ -4,6 +4,7 @@ import { Plus, Pencil, Trash2, Layers, Upload } from 'lucide-react'
 import { getVLANs, createVLAN, updateVLAN, deleteVLAN, importVLANs } from '../api/client'
 import type { VLAN, Status } from '../types'
 import { Modal } from '../components/Modal'
+import { ErrorBanner } from '../components/ErrorBanner'
 import { ImportModal } from '../components/ImportModal'
 import { StatusBadge } from '../components/StatusBadge'
 import { ExportMenu } from '../components/ExportMenu'
@@ -23,8 +24,15 @@ export function VLANs() {
   const [error, setError] = useState('')
   const [search, setSearch] = useState('')
   const [showImport, setShowImport] = useState(false)
+  const [loadError, setLoadError] = useState('')
 
-  const load = useCallback(async () => { setVlans(await getVLANs()) }, [])
+  const load = useCallback(async () => {
+    try {
+      setVlans(await getVLANs()); setLoadError('')
+    } catch (err) {
+      setLoadError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || t.common.somethingWentWrong)
+    }
+  }, [t])
   useEffect(() => { load() }, [load])
 
   const openCreate = () => { setEditing(null); setForm(emptyForm); setError(''); setShowModal(true) }
@@ -77,6 +85,8 @@ export function VLANs() {
           )}
         </div>
       </div>
+
+      {loadError && <ErrorBanner message={loadError} onRetry={load} />}
 
       <div className="mb-4">
         <input type="text" placeholder={t.vlans.searchPlaceholder} value={search}

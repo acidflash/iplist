@@ -4,6 +4,7 @@ import { Plus, Pencil, Trash2, ChevronRight, ChevronDown, Network, Upload } from
 import { getPrefixes, createPrefix, updatePrefix, deletePrefix, getVLANs, importPrefixes } from '../api/client'
 import type { Prefix, VLAN, Status } from '../types'
 import { Modal } from '../components/Modal'
+import { ErrorBanner } from '../components/ErrorBanner'
 import { UtilizationBar } from '../components/UtilizationBar'
 import { StatusBadge } from '../components/StatusBadge'
 import { useAuth } from '../context/AuthContext'
@@ -185,11 +186,16 @@ export function Prefixes() {
   const [prefixError, setPrefixError] = useState('')
   const [search, setSearch] = useState('')
   const [showImport, setShowImport] = useState(false)
+  const [loadError, setLoadError] = useState('')
 
   const load = useCallback(async () => {
-    const [p, v] = await Promise.all([getPrefixes(), getVLANs()])
-    setPrefixes(p); setVlans(v)
-  }, [])
+    try {
+      const [p, v] = await Promise.all([getPrefixes(), getVLANs()])
+      setPrefixes(p); setVlans(v); setLoadError('')
+    } catch (err) {
+      setLoadError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || t.common.somethingWentWrong)
+    }
+  }, [t])
 
   useEffect(() => { load() }, [load])
 
@@ -208,7 +214,7 @@ export function Prefixes() {
   }
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault(); setError('')
-    const cidrErr = validateCIDR(form.prefix)
+    const cidrErr = validateCIDR(form.prefix, t.cidrErrors)
     if (cidrErr) { setPrefixError(cidrErr); return }
     try {
       const payload = {
@@ -255,6 +261,8 @@ export function Prefixes() {
           )}
         </div>
       </div>
+
+      {loadError && <ErrorBanner message={loadError} onRetry={load} />}
 
       <div className="mb-4">
         <input
@@ -327,7 +335,7 @@ export function Prefixes() {
                 onChange={e => {
                   const v = e.target.value
                   setForm(f => ({ ...f, prefix: v }))
-                  setPrefixError(validateCIDR(v))
+                  setPrefixError(validateCIDR(v, t.cidrErrors))
                 }}
                 className="ctrl mono"
                 style={prefixError ? { borderColor: 'var(--c-danger)' } : undefined} />

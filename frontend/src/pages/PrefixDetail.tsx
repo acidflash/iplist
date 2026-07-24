@@ -5,6 +5,7 @@ import { getPrefix, createAddress, updateAddress, deleteAddress, getSubnets, cre
 import type { PingResult, DiscoverResult } from '../api/client'
 import type { Prefix, IPAddress, Status, SplitResponse, VLAN, NetworkInfo } from '../types'
 import { Modal } from '../components/Modal'
+import { ErrorBanner } from '../components/ErrorBanner'
 import { StatusBadge } from '../components/StatusBadge'
 import { UtilizationBar } from '../components/UtilizationBar'
 import { useAuth } from '../context/AuthContext'
@@ -43,12 +44,17 @@ export function PrefixDetail() {
   const [pinging, setPinging] = useState(false)
   const [discovering, setDiscovering] = useState(false)
   const [discoverResult, setDiscoverResult] = useState<DiscoverResult | null>(null)
+  const [loadError, setLoadError] = useState('')
 
   const load = useCallback(async () => {
     if (!id) return
-    const p = await getPrefix(parseInt(id))
-    setPrefix(p)
-  }, [id])
+    try {
+      const p = await getPrefix(parseInt(id))
+      setPrefix(p); setLoadError('')
+    } catch (err) {
+      setLoadError((err as { response?: { data?: { error?: string } } })?.response?.data?.error || t.common.somethingWentWrong)
+    }
+  }, [id, t])
 
   useEffect(() => { load() }, [load])
 
@@ -115,7 +121,11 @@ export function PrefixDetail() {
   }
 
   if (!prefix) return (
-    <div className="p-6" style={{ color: 'var(--c-text-3)', fontSize: '14px' }}>{t.common.loading}</div>
+    <div className="p-6">
+      {loadError
+        ? <ErrorBanner message={loadError} onRetry={load} />
+        : <div style={{ color: 'var(--c-text-3)', fontSize: '14px' }}>{t.common.loading}</div>}
+    </div>
   )
 
   const addresses = prefix.addresses ?? []

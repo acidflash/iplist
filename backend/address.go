@@ -33,36 +33,32 @@ func (r *AddressRepo) findContainingPrefix(ipStr string) (*int64, error) {
 		return nil, fmt.Errorf("invalid IP address: %s", ipStr)
 	}
 
+	candidates, err := r.listCandidates()
+	if err != nil {
+		return nil, err
+	}
+	return longestMatchingPrefix(ip, candidates), nil
+}
+
+// listCandidates loads all prefixes as (id, prefix) pairs. Callers doing many
+// lookups in a row (e.g. CSV import) should call this once and reuse the
+// result via longestMatchingPrefix instead of re-querying per row.
+func (r *AddressRepo) listCandidates() ([]prefixCandidate, error) {
 	rows, err := r.db.Query("SELECT id, prefix FROM prefixes ORDER BY prefix DESC")
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var bestID *int64
-	bestOnes := -1
-
+	var candidates []prefixCandidate
 	for rows.Next() {
-		var id int64
-		var prefix string
-		if err := rows.Scan(&id, &prefix); err != nil {
+		var c prefixCandidate
+		if err := rows.Scan(&c.ID, &c.Prefix); err != nil {
 			continue
 		}
-		_, network, err := net.ParseCIDR(prefix)
-		if err != nil {
-			continue
-		}
-		if network.Contains(ip) {
-			ones, _ := network.Mask.Size()
-			if ones > bestOnes {
-				bestOnes = ones
-				tmp := id
-				bestID = &tmp
-			}
-		}
+		candidates = append(candidates, c)
 	}
-
-	return bestID, nil
+	return candidates, nil
 }
 
 func (r *AddressRepo) List(prefixID *int64, status string) ([]IPAddress, error) {
@@ -130,6 +126,38 @@ func (r *AddressRepo) Create(req addressRequest) (*IPAddress, error) {
 		if err != nil {
 			return nil, err
 		}
+	}
+
+	if req.Status == "" {
+		req.Status = "active"
+	}
+
+	now := time.Now()
+	result, err := r.db.Exec(`
+		INSERT INTO ip_addresses (address, prefix_id, hostname, description, status, dns_name, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		req.Address, prefixID, req.Hostname, req.Description, req.Status, req.DNSName, now, now)
+	if err != nil {
+		return nil, err
+	}
+
+	id, _ := result.LastInsertId()
+	return r.GetByID(id)
+}
+
+// CreateBatch is like Create but resolves the containing prefix by
+// longest-prefix-match against a preloaded candidate set instead of
+// re-querying the whole prefixes table. Intended for CSV import, where
+// calling Create per row would scan the full prefixes table per row.
+func (r *AddressRepo) CreateBatch(req addressRequest, candidates []prefixCandidate) (*IPAddress, error) {
+	ip := net.ParseIP(req.Address)
+	if ip == nil {
+		return nil, fmt.Errorf("invalid IP address: %s", req.Address)
+	}
+
+	prefixID := req.PrefixID
+	if prefixID == nil {
+		prefixID = longestMatchingPrefix(ip, candidates)
 	}
 
 	if req.Status == "" {

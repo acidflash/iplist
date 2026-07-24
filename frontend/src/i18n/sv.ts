@@ -17,6 +17,7 @@ const sv: Translations = {
     loading: 'Laddar…',
     somethingWentWrong: 'Något gick fel',
     confirmDelete: (what) => `Är du säker på att du vill ta bort ${what}?`,
+    retry: 'Försök igen',
   },
 
   status: {
@@ -76,6 +77,15 @@ const sv: Translations = {
     parentPrefix: 'Överordnat prefix',
     parentAuto: 'Automatisk',
     confirmDelete: (cidr) => `Är du säker på att du vill ta bort ${cidr}?`,
+  },
+
+  cidrErrors: {
+    prefixLenIPv4: 'Prefixlängd måste vara 0–32',
+    prefixLenIPv6: 'Prefixlängd måste vara 0–128',
+    invalidIPv4: 'Ogiltig IPv4-adress',
+    invalidIPv6: 'Ogiltig IPv6-adress',
+    invalidFormat: 'Ogiltigt CIDR-format',
+    hostBitsSet: (suggestion) => `Hostbitar är satta — menade du ${suggestion}?`,
   },
 
   prefixDetail: {

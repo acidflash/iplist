@@ -92,7 +92,27 @@ func runMigrations(db *sql.DB) error {
 		}
 	}
 
+	if version < 2 {
+		if err := migration2AddIndexes(db); err != nil {
+			return err
+		}
+		if _, err := db.Exec("PRAGMA user_version = 2"); err != nil {
+			return err
+		}
+	}
+
 	return nil
+}
+
+// migration2AddIndexes adds indexes on the foreign-key columns most often
+// filtered/joined on, which were previously full-table-scanned.
+func migration2AddIndexes(db *sql.DB) error {
+	_, err := db.Exec(`
+		CREATE INDEX IF NOT EXISTS idx_ip_addresses_prefix_id ON ip_addresses(prefix_id);
+		CREATE INDEX IF NOT EXISTS idx_prefixes_parent_id ON prefixes(parent_id);
+		CREATE INDEX IF NOT EXISTS idx_prefixes_vlan_id ON prefixes(vlan_id);
+	`)
+	return err
 }
 
 // migration1AddPendingStatus recreates the three status columns to allow 'pending'.

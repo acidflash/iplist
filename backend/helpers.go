@@ -38,6 +38,35 @@ func ipNetTotalSize(cidr string) int64 {
 	return size
 }
 
+type prefixCandidate struct {
+	ID     int64
+	Prefix string
+}
+
+// longestMatchingPrefix returns the ID of the most specific candidate whose
+// network contains ip (longest-prefix-match), or nil if none match. Pure
+// in-memory scan so callers can reuse one preloaded candidate set across many
+// lookups instead of re-querying the whole prefixes table each time.
+func longestMatchingPrefix(ip net.IP, candidates []prefixCandidate) *int64 {
+	var bestID *int64
+	bestOnes := -1
+	for _, c := range candidates {
+		_, network, err := net.ParseCIDR(c.Prefix)
+		if err != nil {
+			continue
+		}
+		if network.Contains(ip) {
+			ones, _ := network.Mask.Size()
+			if ones > bestOnes {
+				bestOnes = ones
+				id := c.ID
+				bestID = &id
+			}
+		}
+	}
+	return bestID
+}
+
 func normalizeCIDR(cidr string) (string, error) {
 	_, ipNet, err := net.ParseCIDR(cidr)
 	if err != nil {

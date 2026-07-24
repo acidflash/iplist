@@ -146,6 +146,12 @@ func ImportAddresses(repo *AddressRepo) http.HandlerFunc {
 			return
 		}
 
+		candidates, err := repo.listCandidates()
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
 		var result importResult
 		result.Errors = []importError{}
 
@@ -174,7 +180,7 @@ func ImportAddresses(repo *AddressRepo) http.HandlerFunc {
 				Description: colVal(row, descIdx),
 				Status:      status,
 			}
-			if _, err := repo.Create(req); err != nil {
+			if _, err := repo.CreateBatch(req, candidates); err != nil {
 				result.Errors = append(result.Errors, importError{Row: lineNum, Error: err.Error()})
 				result.Skipped++
 				continue
@@ -216,6 +222,12 @@ func ImportPrefixes(prefixRepo *PrefixRepo, vlanRepo *VLANRepo) http.HandlerFunc
 					vidToID[v.Vid] = v.ID
 				}
 			}
+		}
+
+		candidates, err := prefixRepo.listCandidates(nil)
+		if err != nil {
+			respondError(w, http.StatusInternalServerError, err.Error())
+			return
 		}
 
 		var result importResult
@@ -260,7 +272,7 @@ func ImportPrefixes(prefixRepo *PrefixRepo, vlanRepo *VLANRepo) http.HandlerFunc
 				}
 			}
 
-			if _, err := prefixRepo.Create(req); err != nil {
+			if _, err := prefixRepo.CreateBatch(req, &candidates); err != nil {
 				result.Errors = append(result.Errors, importError{Row: lineNum, Error: err.Error()})
 				result.Skipped++
 				continue

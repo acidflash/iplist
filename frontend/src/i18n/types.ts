@@ -31,6 +31,7 @@ export interface Translations {
     loading: string
     somethingWentWrong: string
     confirmDelete: (what: string) => string
+    retry: string
   }
 
   status: {
@@ -91,6 +92,15 @@ export interface Translations {
     parentPrefix: string
     parentAuto: string
     confirmDelete: (cidr: string) => string
+  }
+
+  cidrErrors: {
+    prefixLenIPv4: string
+    prefixLenIPv6: string
+    invalidIPv4: string
+    invalidIPv6: string
+    invalidFormat: string
+    hostBitsSet: (suggestion: string) => string
   }
 
   prefixDetail: {

@@ -18,39 +18,48 @@ function formatIPv6(n: bigint): string {
   return (n.toString(16).padStart(32, '0').match(/.{4}/g) ?? []).join(':')
 }
 
-export function validateCIDR(value: string): string {
+export interface CIDRErrorMessages {
+  prefixLenIPv4: string
+  prefixLenIPv6: string
+  invalidIPv4: string
+  invalidIPv6: string
+  invalidFormat: string
+  hostBitsSet: (suggestion: string) => string
+}
+
+export function validateCIDR(value: string, errors: CIDRErrorMessages): string {
   if (!value || !value.includes('/')) return ''
   const slash = value.lastIndexOf('/')
   const addr = value.slice(0, slash)
   const len = parseInt(value.slice(slash + 1), 10)
 
   if (addr.includes('.')) {
-    if (isNaN(len) || len < 0 || len > 32) return 'Prefixlängd måste vara 0–32'
+    if (isNaN(len) || len < 0 || len > 32) return errors.prefixLenIPv4
     const parts = addr.split('.').map(Number)
     if (parts.length !== 4 || parts.some(p => isNaN(p) || p < 0 || p > 255))
-      return 'Ogiltig IPv4-adress'
+      return errors.invalidIPv4
     const ip = ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0
     const mask = len === 0 ? 0 : ((~0) << (32 - len)) >>> 0
     const network = (ip & mask) >>> 0
     if (network !== ip) {
       const c = [(network >>> 24) & 0xff, (network >>> 16) & 0xff, (network >>> 8) & 0xff, network & 0xff].join('.')
-      return `Hostbitar är satta — menade du ${c}/${len}?`
+      return errors.hostBitsSet(`${c}/${len}`)
     }
     return ''
   }
 
   if (addr.includes(':')) {
-    if (isNaN(len) || len < 0 || len > 128) return 'Prefixlängd måste vara 0–128'
+    if (isNaN(len) || len < 0 || len > 128) return errors.prefixLenIPv6
     const full = expandIPv6(addr)
-    if (!full) return 'Ogiltig IPv6-adress'
+    if (!full) return errors.invalidIPv6
     const ipBits = BigInt('0x' + full.replace(/:/g, ''))
     const mask = len === 0 ? 0n : (~0n << BigInt(128 - len)) & ((1n << 128n) - 1n)
     const network = ipBits & mask
     if (network !== ipBits) {
-      return `Hostbitar är satta — menade du ${formatIPv6(network)}/${len}?`
+      return errors.hostBitsSet(`${formatIPv6(network)}/${len}`)
     }
     return ''
   }
 
-  return 'Ogiltigt CIDR-format'
+  return errors.invalidFormat
 }
